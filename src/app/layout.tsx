@@ -7,8 +7,8 @@ import NextAuthProvider from "@/components/next-auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
-  title: "Mini App Starter",
-  description: "A starter template for building mini apps with Next.js",
+  title: "Ephemeral",
+  description: "Spontaneous convos, unfiltered ideas, self-destructing chats.",
 };
 
 export default function RootLayout({
