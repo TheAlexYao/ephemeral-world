@@ -1,27 +1,21 @@
-import { createClient } from "redis";
+import Redis from "ioredis";
 
-let client: ReturnType<typeof createClient>;
-
-export function getRedisClient() {
-  if (!client) {
-    const redisUrl = process.env.REDIS_URL;
-    if (!redisUrl) {
-      throw new Error("REDIS_URL is not defined");
-    }
-
-    client = createClient({
-      url: redisUrl,
-      socket: {
-        tls: true,
-        rejectUnauthorized: false,
-        secureProtocol: 'TLSv1_2_method',
-      }
-    });
-
-    client.on("error", (err) => console.error("Redis Client Error:", err));
-    client.connect().catch(console.error);
-  }
-  return client;
+const redisUrl = process.env.REDIS_URL;
+if (!redisUrl) {
+  throw new Error("REDIS_URL not defined");
 }
 
-export default getRedisClient();
+const options: Record<string, any> = {};
+
+if (redisUrl.startsWith("rediss://")) {
+  const redisParsedUrl = new URL(redisUrl);
+  Object.assign(options, {
+    tls: {
+      rejectUnauthorized: false,
+      servername: redisParsedUrl.hostname,
+    },
+  });
+}
+
+const redis = new Redis(redisUrl, options);
+export default redis;
