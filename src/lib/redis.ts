@@ -1,54 +1,27 @@
 import { createClient } from "redis";
 
-const redisUrl = process.env.REDIS_URL;
-if (!redisUrl) {
-  throw new Error("REDIS_URL is not defined in the environment variables.");
-}
+let client: ReturnType<typeof createClient>;
 
-const client = createClient({
-  url: redisUrl,
-  socket: {
-    tls: true,
-    rejectUnauthorized: false,
-    secureProtocol: 'TLSv1_2_method',
-    reconnectStrategy: (retries) => {
-      // Exponential backoff
-      return Math.min(retries * 100, 3000);
-    },
-  },
-});
-
-client.on("error", (err) => {
-  console.error("Redis Client Error:", err);
-});
-
-client.on("connect", () => {
-  console.log("Redis Client Connected");
-});
-
-client.on("reconnecting", () => {
-  console.log("Redis Client Reconnecting");
-});
-
-// Connect with retry logic
-async function connectWithRetry(maxRetries = 5) {
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      await client.connect();
-      return;
-    } catch (err) {
-      console.error(`Failed to connect to Redis (attempt ${i + 1}/${maxRetries}):`, err);
-      if (i === maxRetries - 1) throw err;
-      // Wait before retrying (exponential backoff)
-      await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, i), 10000)));
+export function getRedisClient() {
+  if (!client) {
+    const redisUrl = process.env.REDIS_URL;
+    if (!redisUrl) {
+      throw new Error("REDIS_URL is not defined");
     }
+
+    client = createClient({
+      url: redisUrl,
+      socket: {
+        tls: true,
+        rejectUnauthorized: false,
+        secureProtocol: 'TLSv1_2_method',
+      }
+    });
+
+    client.on("error", (err) => console.error("Redis Client Error:", err));
+    client.connect().catch(console.error);
   }
+  return client;
 }
 
-// Initialize connection
-connectWithRetry().catch((err) => {
-  console.error("Failed to connect to Redis after all retries:", err);
-  process.exit(1);
-});
-
-export default client;
+export default getRedisClient();

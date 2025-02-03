@@ -11,6 +11,7 @@ export function middleware(request: NextRequest) {
 
   // Add /api/redis to ignored paths so it isn't protected by auth
   const ignorePaths = [
+    "/api/socket",
     "/api/auth",
     "/api/redis",
     "/api/me",
