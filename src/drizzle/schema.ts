@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { text, integer, sqliteTable, boolean } from "drizzle-orm/sqlite-core";
+import { text, integer, sqliteTable } from "drizzle-orm/sqlite-core";
 
 // Users table
 export const users = sqliteTable("users", {
@@ -22,7 +22,7 @@ export const chatRooms = sqliteTable("chat_rooms", {
   createdBy: text("createdBy").notNull(),
   createdAt: text("createdAt").default(sql`CURRENT_TIMESTAMP`),
   deepLink: text("deepLink").notNull(),
-  active: boolean("active").default(false),
+  active: integer("active", { mode: "boolean" }).default(false),
 });
 
 // New SessionLog table (persistent data in Turso)
