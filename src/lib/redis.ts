@@ -10,6 +10,7 @@ const client = createClient({
   socket: {
     tls: true,
     rejectUnauthorized: false,
+    secureProtocol: 'TLSv1_2_method',
     reconnectStrategy: (retries) => {
       // Exponential backoff
       return Math.min(retries * 100, 3000);
