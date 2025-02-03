@@ -8,8 +8,8 @@ if (!redisUrl) {
 const client = createClient({
   url: redisUrl,
   socket: {
-    tls: process.env.NODE_ENV === "production",
-    rejectUnauthorized: false, // Required for Redis Cloud
+    tls: true,
+    rejectUnauthorized: false,
     reconnectStrategy: (retries) => {
       // Exponential backoff
       return Math.min(retries * 100, 3000);
