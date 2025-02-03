@@ -7,7 +7,7 @@ import NextAuthProvider from "@/components/next-auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
-  title: "Ephemeral",
+  title: "Ephemeral Chat",
   description: "Spontaneous convos, unfiltered ideas, self-destructing chats.",
 };
 
