@@ -64,8 +64,15 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      roomId,
-      deepLink
+      room: {
+        id: roomId,
+        createdBy: userId,
+        createdAt: new Date().toISOString(),
+        active: true,
+        deepLink,
+        remainingRequests: RATE_LIMIT - currentRequests,
+        resetIn: await redis.ttl(rateKey)
+      }
     });
   } catch (error: any) {
     console.error("Room creation error:", error);

@@ -13,6 +13,7 @@ export function middleware(request: NextRequest) {
   const ignorePaths = [
     "/api/auth",
     "/api/redis",
+    "/api/me",
     "/api/test-room", // Keep test endpoint public
     "/_next",
     "/favicon.ico"
