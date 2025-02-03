@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import redis from "@/lib/redis";
 
+export const runtime = 'nodejs';
+
 export async function GET(req: NextRequest) {
   try {
     // Set a test key with a TTL of 60 seconds

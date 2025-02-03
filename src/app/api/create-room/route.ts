@@ -16,6 +16,8 @@ function encodeRoomPath(roomId: string) {
   return encodeURIComponent(`/room/${roomId}`);
 }
 
+export const runtime = 'nodejs';
+
 export async function POST(req: NextRequest) {
   try {
     // Get user session

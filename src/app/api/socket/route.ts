@@ -115,7 +115,7 @@ io.on("connection", (socket: Socket) => {
   });
 });
 
-export const runtime = "edge";
+export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest) {
   // @ts-ignore - req.socket is available in Edge Runtime
