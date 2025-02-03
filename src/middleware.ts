@@ -9,11 +9,16 @@ export function middleware(request: NextRequest) {
   const publicPaths = ["/"];
   const isPublicPath = publicPaths.includes(path);
 
-  // Define paths that should be ignored by middleware
-  const ignorePaths = ["/api/auth", "/_next", "/favicon.ico"];
-  const shouldIgnore = ignorePaths.some((ignorePath) =>
-    path.startsWith(ignorePath)
-  );
+  // Add /api/redis to ignored paths so it isn't protected by auth
+  const ignorePaths = [
+    "/api/auth",
+    "/api/redis",
+    "/api/create-room",
+    "/api/test-room",
+    "/_next",
+    "/favicon.ico"
+  ];
+  const shouldIgnore = ignorePaths.some((ignorePath) => path.startsWith(ignorePath));
 
   if (shouldIgnore) {
     return NextResponse.next();
