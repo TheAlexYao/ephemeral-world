@@ -23,7 +23,7 @@ export function Chat({ userId, roomId }: ChatProps) {
   const [channel, setChannel] = useState<Channel | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
-  const [debugMessages, setDebugMessages] = useState<any[]>([]);
+  const [debugMessages, setDebugMessages] = useState<Message[]>([]);
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
@@ -32,7 +32,10 @@ export function Chat({ userId, roomId }: ChatProps) {
     setChannel(channel);
 
     // Listen for new messages
-    channel.bind('new-message', (message: Message) => {
+    const handleNewMessage = (message: Message) => {
+      console.log("Received new-message payload:", message);
+      setDebugMessages(prev => [...prev, message]);
+      
       setMessages((prevMessages) => {
         // Remove messages older than 60 seconds
         const now = new Date();
@@ -42,7 +45,9 @@ export function Chat({ userId, roomId }: ChatProps) {
         });
         return [...filtered, message];
       });
-    });
+    };
+    
+    channel.bind('new-message', handleNewMessage);
 
     // Fetch existing messages
     fetch(`/api/chat?roomId=${roomId}`)
@@ -71,10 +76,6 @@ export function Chat({ userId, roomId }: ChatProps) {
 
     // Debugging code for Pusher subscription
     console.log("Subscribing to channel room-" + roomId);
-    channel.bind("new-message", (data: any) => {
-      console.log("Received new-message payload:", data);
-      setDebugMessages(prev => [...prev, data]);
-    });
     channel.bind("pusher:subscription_succeeded", () => {
       console.log("Subscription succeeded for room-" + roomId);
       setConnected(true);
@@ -88,15 +89,19 @@ export function Chat({ userId, roomId }: ChatProps) {
     return () => {
       console.log("Unsubscribing from channel room-" + roomId);
       clearInterval(cleanupInterval);
-      channel.unbind_all();
-      channel.unsubscribe();
+      if (channel) {
+        channel.unbind('new-message', handleNewMessage);
+        channel.unbind_all();
+        channel.unsubscribe();
+      }
     };
   }, [roomId]);
 
-  const sendMessage = async () => {
-    if (messageInput.trim()) {
+  const sendMessage = async (message: string = messageInput) => {
+    if (message.trim()) {
       try {
-        await fetch('/api/chat', {
+        console.log('Sending message to room:', roomId, message);
+        const response = await fetch('/api/chat', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -104,14 +109,29 @@ export function Chat({ userId, roomId }: ChatProps) {
           body: JSON.stringify({
             userId,
             roomId,
-            message: messageInput.trim(),
+            message: message.trim(),
           }),
         });
-        setMessageInput('');
+
+        const data = await response.json();
+        console.log('Message send response:', data);
+
+        if (!response.ok) {
+          throw new Error('Failed to send message: ' + (data.error || response.statusText));
+        }
+
+        if (message === messageInput) {
+          setMessageInput('');
+        }
       } catch (error) {
         console.error('Error sending message:', error);
       }
     }
+  };
+
+  const sendTestMessage = () => {
+    const testMessage = `Test message from ${userId} at ${new Date().toISOString()}`;
+    sendMessage(testMessage);
   };
 
   return (
@@ -150,16 +170,28 @@ export function Chat({ userId, roomId }: ChatProps) {
           placeholder="Type a message..."
           className="flex-1"
         />
-        <Button onClick={sendMessage}>Send</Button>
+        <Button onClick={(e: React.MouseEvent<HTMLButtonElement>) => sendTestMessage()}>Send</Button>
       </div>
 
       <div style={{ padding: '1rem', border: '1px solid #ccc', marginTop: '1rem' }}>
         <p>Connection status: {connected ? "Connected" : "Disconnected"}</p>
+        <div style={{ marginBottom: '1rem' }}>
+          <Button 
+            onClick={(e: React.MouseEvent<HTMLButtonElement>) => sendTestMessage()}
+            variant="outline"
+          >
+            Send Test Message
+          </Button>
+        </div>
+        <p>Room ID: {roomId}</p>
+        <p>User ID: {userId}</p>
         <p>Received Messages:</p>
         <ScrollArea style={{ height: '200px' }}>
           {debugMessages.map((msg, index) => (
-            <div key={index}>
-              <p>{JSON.stringify(msg)}</p>
+            <div key={index} style={{ padding: '0.5rem', borderBottom: '1px solid #eee' }}>
+              <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+                {JSON.stringify(msg, null, 2)}
+              </pre>
             </div>
           ))}
         </ScrollArea>
