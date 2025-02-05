@@ -90,7 +90,7 @@ io.on("connection", (socket: Socket) => {
       });
 
       // Update Redis
-      await redis.hDel(`room:${roomId}:users`, userId);
+      await redis.hdel(`room:${roomId}:users`, userId);
     } catch (error) {
       console.error("Error leaving room:", error);
     }
@@ -108,7 +108,7 @@ io.on("connection", (socket: Socket) => {
             userId,
             timestamp: new Date().toISOString(),
           });
-          await redis.hDel(`room:${roomId}:users`, userId);
+          await redis.hdel(`room:${roomId}:users`, userId);
         }
       });
     });
