@@ -31,6 +31,10 @@ export function SocketTest({ userId }: SocketTestProps) {
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      transports: ['polling', 'websocket'],
+      withCredentials: true,
+      autoConnect: true,
+      timeout: 45000,
     });
 
     newSocket.on('connect', () => {

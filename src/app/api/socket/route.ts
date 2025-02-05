@@ -183,7 +183,8 @@ function setupSocketHandlers(io: Server) {
   });
 };
 
-export async function GET(req: NextRequest) {
+// Handle both GET and POST for Socket.IO polling
+async function handleSocket(req: NextRequest) {
   try {
     // Initialize Socket.IO if not already initialized
     if (!global.io) {
@@ -193,20 +194,61 @@ export async function GET(req: NextRequest) {
         cors: {
           origin: "*",
           methods: ["GET", "POST"],
-          credentials: true
+          credentials: true,
+          allowedHeaders: ["*"]
         },
-        transports: ['websocket', 'polling'],
+        transports: ['polling', 'websocket'],
         pingTimeout: 60000,
         pingInterval: 25000,
+        connectTimeout: 45000,
       });
       setupSocketHandlers(global.io);
     }
 
-    // @ts-ignore - req.socket is available in Edge Runtime
-    await global.io.attach(req.socket);
-    return new NextResponse(null, { status: 200 });
+    // Handle the Socket.IO request
+    const res = await global.io.handleRequest(req, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST',
+        'Access-Control-Allow-Headers': '*',
+        'Access-Control-Allow-Credentials': 'true',
+      }
+    });
+
+    return res;
   } catch (error) {
-    console.error('Socket attachment error:', error);
-    return new NextResponse('Failed to attach socket', { status: 500 });
+    console.error('Socket error:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+    }
+    return new NextResponse('Internal Server Error', { 
+      status: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST',
+        'Access-Control-Allow-Headers': '*',
+        'Access-Control-Allow-Credentials': 'true',
+      }
+    });
   }
+}
+
+export const GET = handleSocket;
+export const POST = handleSocket;
+
+// Add OPTIONS handler for CORS preflight
+export async function OPTIONS(req: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST',
+      'Access-Control-Allow-Headers': '*',
+      'Access-Control-Allow-Credentials': 'true',
+    },
+  });
 }
