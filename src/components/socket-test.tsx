@@ -38,9 +38,39 @@ export function Chat({ userId, roomId }: ChatProps) {
       setChannel(channel);
       
       // Log connection state changes
-      pusherClient.connection.bind('state_change', (states: { current: string }) => {
-        console.log('Connection state changed:', states.current);
+      pusherClient.connection.bind('state_change', (states: { current: string, previous: string }) => {
+        console.log('Pusher connection state changed:', {
+          previous: states.previous,
+          current: states.current,
+          socketId: pusherClient.connection.socket_id,
+          timeline: pusherClient.connection.state_machine.state.timeline
+        });
         setConnected(states.current === 'connected');
+        if (states.current === 'failed' || states.current === 'disconnected') {
+          setError(`Connection ${states.current}. Attempting to reconnect...`);
+        } else if (states.current === 'connected') {
+          setError(null);
+        }
+      });
+
+      // Handle connection errors
+      pusherClient.connection.bind('error', (err: any) => {
+        console.error('Pusher connection error:', err);
+        setError(`Connection error: ${err.message || 'Unknown error'}`);
+      });
+
+      // Log successful subscription
+      channel.bind('pusher:subscription_succeeded', () => {
+        console.log('Successfully subscribed to channel:', channelName);
+        setConnected(true);
+        setError(null);
+      });
+
+      // Log subscription errors
+      channel.bind('pusher:subscription_error', (err: any) => {
+        console.error('Channel subscription error:', err);
+        setError(`Subscription error: ${err.message || 'Unknown error'}`);
+        setConnected(false);
       });
 
     // Listen for new messages
