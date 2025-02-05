@@ -25,8 +25,12 @@ export function SocketTest({ userId }: SocketTestProps) {
   const [messageInput, setMessageInput] = useState('');
 
   useEffect(() => {
-    const newSocket = io('', {
-      path: '/api/socket'
+    const newSocket = io('/', {
+      path: '/api/socket',
+      addTrailingSlash: false,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
     newSocket.on('connect', () => {

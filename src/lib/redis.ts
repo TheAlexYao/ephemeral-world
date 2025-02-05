@@ -8,12 +8,14 @@ if (!redisUrl) {
 const url = new URL(redisUrl);
 
 // For Redis Cloud, we need to use the full URL with SSL options
-const redis = new Redis(redisUrl, {
+const redis = new Redis({
+  host: url.hostname,
+  port: Number(url.port),
+  username: url.username,
+  password: url.password,
   tls: {
-    // Redis Cloud uses a self-signed certificate
     rejectUnauthorized: false,
-    // Explicitly set TLS version
-    minVersion: 'TLSv1.2',
+    servername: url.hostname
   },
   retryStrategy: (times: number) => {
     const delay = Math.min(times * 50, 2000);
