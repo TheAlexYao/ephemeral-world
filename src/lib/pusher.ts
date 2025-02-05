@@ -15,8 +15,10 @@ export const pusherClient = new PusherClient(
     cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
     forceTLS: true,
     enabledTransports: ['ws', 'wss'],
-    timeout: 20000,
-    retryAfter: 3000
+    activityTimeout: 20000,
+    pongTimeout: 10000,
+    wsHost: `${process.env.NEXT_PUBLIC_PUSHER_CLUSTER!}.pusher.com`,
+    wssPort: 443
   }
 );
 
