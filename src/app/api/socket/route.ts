@@ -80,21 +80,34 @@ export async function POST(req: NextRequest) {
     });
     await redis.expire(`room:${roomId}:messages`, 60);
 
-    // Trigger Pusher event
-    await pusherServer.trigger(
-      `room-${roomId}`,
-      'new-message',
-      messageObject
-    );
+    // Sanitize room ID and create channel name
+    const sanitizedRoomId = roomId.replace(/[^a-zA-Z0-9-_]/g, '');
+    const channelName = `presence-room-${sanitizedRoomId}`;
 
-    // Schedule message expiration event
-    setTimeout(async () => {
+    try {
+      // Trigger Pusher event
       await pusherServer.trigger(
-        `room-${roomId}`,
-        'message_expired',
-        { messageId }
+        channelName,
+        'new-message',
+        messageObject
       );
-    }, 60000);
+
+      // Schedule message expiration event
+      setTimeout(async () => {
+        try {
+          await pusherServer.trigger(
+            channelName,
+            'message_expired',
+            { messageId }
+          );
+        } catch (error) {
+          console.error('Error sending message expiration event:', error);
+        }
+      }, 60000);
+    } catch (error) {
+      console.error('Error triggering Pusher event:', error);
+      throw error;
+    }
 
     return new NextResponse(JSON.stringify({ success: true, messageId }), {
       status: 200,

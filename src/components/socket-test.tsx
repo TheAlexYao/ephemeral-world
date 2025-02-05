@@ -29,7 +29,12 @@ export function Chat({ userId, roomId }: ChatProps) {
   useEffect(() => {
     // Subscribe to the room channel
     try {
-      const channel = pusherClient.subscribe(`room-${roomId}`);
+      // Sanitize channel name to only include allowed characters
+      const sanitizedRoomId = roomId.replace(/[^a-zA-Z0-9-_]/g, '');
+      const channelName = `presence-room-${sanitizedRoomId}`;
+      console.log('Subscribing to channel:', channelName);
+      
+      const channel = pusherClient.subscribe(channelName);
       setChannel(channel);
       
       // Log connection state changes
