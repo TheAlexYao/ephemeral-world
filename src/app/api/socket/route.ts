@@ -104,9 +104,25 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Error in POST handler:', error);
     
+    // Log detailed error information
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      });
+    }
+    
     // Handle Redis connection errors
-    if (error instanceof Error && error.message.includes('ECONNREFUSED')) {
-      return new NextResponse(JSON.stringify({ error: 'Database connection error' }), {
+    if (error instanceof Error && (
+      error.message.includes('ECONNREFUSED') ||
+      error.message.includes('Redis connection') ||
+      error.message.includes('wrong version number')
+    )) {
+      return new NextResponse(JSON.stringify({ 
+        error: 'Database connection error',
+        details: error.message
+      }), {
         status: 503,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -114,7 +130,10 @@ export async function POST(req: NextRequest) {
     
     // Handle Pusher errors
     if (error instanceof Error && error.message.includes('Pusher')) {
-      return new NextResponse(JSON.stringify({ error: 'Message service error' }), {
+      return new NextResponse(JSON.stringify({ 
+        error: 'Message service error',
+        details: error.message
+      }), {
         status: 503,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -122,7 +141,8 @@ export async function POST(req: NextRequest) {
     
     return new NextResponse(JSON.stringify({ 
       error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
+      type: error instanceof Error ? error.name : typeof error
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }

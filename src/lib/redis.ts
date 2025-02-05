@@ -13,19 +13,24 @@ const redis = new Redis({
   port: Number(url.port),
   username: url.username,
   password: url.password,
-  tls: {
+  tls: url.protocol === 'rediss:' ? {
     rejectUnauthorized: true,
     servername: url.hostname,
-    minVersion: 'TLSv1.2'
-  },
+    minVersion: 'TLSv1.2',
+    maxVersion: 'TLSv1.3'
+  } : undefined,
   retryStrategy: (times: number) => {
-    const delay = Math.min(times * 50, 2000);
+    const delay = Math.min(times * 500, 5000);
+    console.log(`Redis retry attempt ${times} with delay ${delay}ms`);
     return delay;
   },
-  maxRetriesPerRequest: 3,
-  enableAutoPipelining: true,
-  enableReadyCheck: false,
+  maxRetriesPerRequest: 5,
+  enableAutoPipelining: false,
+  enableReadyCheck: true,
   lazyConnect: true,
+  connectTimeout: 20000,
+  disconnectTimeout: 20000,
+  commandTimeout: 10000,
   reconnectOnError: (err) => {
     const targetError = 'READONLY';
     if (err.message.includes(targetError)) {

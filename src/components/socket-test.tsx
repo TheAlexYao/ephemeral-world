@@ -57,7 +57,7 @@ export function Chat({ userId, roomId }: ChatProps) {
     channel.bind('new-message', handleNewMessage);
 
     // Fetch existing messages
-    fetch(`/api/chat?roomId=${roomId}`)
+    fetch(`/api/socket?roomId=${roomId}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.messages) {
@@ -114,7 +114,7 @@ export function Chat({ userId, roomId }: ChatProps) {
     if (message.trim()) {
       try {
         console.log('Sending message to room:', roomId, message);
-        const response = await fetch('/api/chat', {
+        const response = await fetch('/api/socket', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
