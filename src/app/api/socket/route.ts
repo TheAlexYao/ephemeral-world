@@ -4,40 +4,21 @@ import type { Socket } from "socket.io";
 import redis from "@/lib/redis";
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // Store active rooms and their sockets
 const rooms = new Map<string, Set<string>>();
 
+// Define the global io variable
 declare global {
   var io: Server | null;
 }
 
-// Initialize Socket.IO server
-const initSocket = () => {
-  if (typeof global.io === 'undefined') {
-    global.io = null;
-  }
-  
-  if (!global.io) {
-    global.io = new Server({
-      path: "/api/socket",
-      addTrailingSlash: false,
-      cors: {
-        origin: "*",
-        methods: ["GET", "POST"],
-      },
-    });
+if (typeof global.io === 'undefined') {
+  global.io = null;
+}
 
-    // Set up event handlers only once
-    setupSocketHandlers(global.io);
-  }
-  return global.io;
-};
-
-// Initialize the socket server if it doesn't exist
-const io = initSocket();
-
-const setupSocketHandlers = (io: Server) => {
+function setupSocketHandlers(io: Server) {
   io.on("connection", (socket: Socket) => {
     console.log("Client connected:", socket.id);
 
@@ -131,16 +112,23 @@ const setupSocketHandlers = (io: Server) => {
   });
 };
 
-export const runtime = 'nodejs';
-
 export async function GET(req: NextRequest) {
-  if (!io) {
-    return new NextResponse('Socket.io server not initialized', { status: 500 });
-  }
-
   try {
+    // Initialize Socket.IO if not already initialized
+    if (!global.io) {
+      global.io = new Server({
+        path: "/api/socket",
+        addTrailingSlash: false,
+        cors: {
+          origin: "*",
+          methods: ["GET", "POST"],
+        },
+      });
+      setupSocketHandlers(global.io);
+    }
+
     // @ts-ignore - req.socket is available in Edge Runtime
-    await io.attach(req.socket);
+    await global.io.attach(req.socket);
     return new NextResponse(null, { status: 200 });
   } catch (error) {
     console.error('Socket attachment error:', error);
