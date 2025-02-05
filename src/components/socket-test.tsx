@@ -23,8 +23,8 @@ export function Chat({ userId, roomId }: ChatProps) {
   const [channel, setChannel] = useState<Channel | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
-  const [debugMessages, setDebugMessages] = useState<Message[]>([]);
   const [connected, setConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Subscribe to the room channel
@@ -46,7 +46,6 @@ export function Chat({ userId, roomId }: ChatProps) {
     // Listen for new messages
     const handleNewMessage = (message: Message) => {
       console.log("Received new-message payload:", message);
-      setDebugMessages(prev => [...prev, message]);
       
       setMessages((prevMessages) => {
         // Remove messages older than 60 seconds
@@ -55,6 +54,11 @@ export function Chat({ userId, roomId }: ChatProps) {
           const msgTime = new Date(msg.timestamp);
           return now.getTime() - msgTime.getTime() <= 60000;
         });
+        
+        // Check if message already exists
+        const exists = filtered.some(msg => msg.messageId === message.messageId);
+        if (exists) return filtered;
+        
         return [...filtered, message];
       });
     };
@@ -188,31 +192,31 @@ export function Chat({ userId, roomId }: ChatProps) {
           placeholder="Type a message..."
           className="flex-1"
         />
-        <Button onClick={(e: React.MouseEvent<HTMLButtonElement>) => sendTestMessage()}>Send</Button>
+        <Button onClick={() => sendMessage()}>Send</Button>
       </div>
 
-      <div style={{ padding: '1rem', border: '1px solid #ccc', marginTop: '1rem' }}>
-        <p>Connection status: {connected ? "Connected" : "Disconnected"}</p>
-        <div style={{ marginBottom: '1rem' }}>
+      <div className="p-4 border rounded-md mt-4 space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-sm">Status: <span className={connected ? "text-green-500" : "text-red-500"}>{connected ? "Connected" : "Disconnected"}</span></p>
           <Button 
-            onClick={(e: React.MouseEvent<HTMLButtonElement>) => sendTestMessage()}
+            onClick={sendTestMessage}
             variant="outline"
+            size="sm"
           >
             Send Test Message
           </Button>
         </div>
-        <p>Room ID: {roomId}</p>
-        <p>User ID: {userId}</p>
-        <p>Received Messages:</p>
-        <ScrollArea style={{ height: '200px' }}>
-          {debugMessages.map((msg, index) => (
-            <div key={index} style={{ padding: '0.5rem', borderBottom: '1px solid #eee' }}>
-              <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-                {JSON.stringify(msg, null, 2)}
-              </pre>
-            </div>
-          ))}
-        </ScrollArea>
+        
+        <div className="text-sm space-y-1">
+          <p>Room: <span className="font-mono">{roomId}</span></p>
+          <p>User: <span className="font-mono">{userId.slice(0, 8)}...</span></p>
+        </div>
+        
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded relative">
+            {error}
+          </div>
+        )}
       </div>
     </div>
   );
