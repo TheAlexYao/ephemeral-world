@@ -5,21 +5,26 @@ if (!redisUrl) {
   throw new Error("REDIS_URL not defined");
 }
 
+const url = new URL(redisUrl);
 const options: Record<string, any> = {
+  host: url.hostname,
+  port: Number(url.port) || 6379,
+  username: url.username,
+  password: url.password,
   retryStrategy: (times: number) => {
     const delay = Math.min(times * 50, 2000);
     return delay;
   },
-  maxRetriesPerRequest: 3,
-  tls: {
-    // Force TLS 1.2 which is widely supported
-    minVersion: 'TLSv1.2',
-    maxVersion: 'TLSv1.2',
-    rejectUnauthorized: false
-  }
+  maxRetriesPerRequest: 3
 };
 
-const redis = new Redis(redisUrl, options);
+if (url.protocol === 'rediss:') {
+  options.tls = {
+    servername: url.hostname
+  };
+}
+
+const redis = new Redis(options);
 
 redis.on('error', (error) => {
   console.error('Redis connection error:', error);

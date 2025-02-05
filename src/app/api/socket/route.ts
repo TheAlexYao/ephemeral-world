@@ -3,22 +3,29 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Socket } from "socket.io";
 import redis from "@/lib/redis";
 
+export const dynamic = 'force-dynamic';
+
 // Store active rooms and their sockets
 const rooms = new Map<string, Set<string>>();
 
 declare global {
-  var io: Server;
+  var io: Server | null;
 }
 
-if (!global.io) {
-  global.io = new Server({
-    path: "/api/socket",
-    addTrailingSlash: false,
-    cors: {
-      origin: "*",
-      methods: ["GET", "POST"],
-    },
-  });
+// Initialize Socket.IO server
+const initSocket = () => {
+  if (!global.io) {
+    global.io = new Server({
+      path: "/api/socket",
+      addTrailingSlash: false,
+      cors: {
+        origin: "*",
+        methods: ["GET", "POST"],
+      },
+    });
+  }
+  return global.io;
+};
 }
 
 const io = global.io;

@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { chatRooms } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     // 1. Create a room via the create-room endpoint
