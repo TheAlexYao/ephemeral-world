@@ -82,15 +82,15 @@ export async function POST(req: NextRequest) {
 
     // Trigger Pusher event
     await pusherServer.trigger(
-      `presence-room-${roomId}`,
-      'message',
+      `room-${roomId}`,
+      'new-message',
       messageObject
     );
 
     // Schedule message expiration event
     setTimeout(async () => {
       await pusherServer.trigger(
-        `presence-room-${roomId}`,
+        `room-${roomId}`,
         'message_expired',
         { messageId }
       );
@@ -103,7 +103,27 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('Error in POST handler:', error);
-    return new NextResponse(JSON.stringify({ error: 'Internal server error' }), {
+    
+    // Handle Redis connection errors
+    if (error instanceof Error && error.message.includes('ECONNREFUSED')) {
+      return new NextResponse(JSON.stringify({ error: 'Database connection error' }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Handle Pusher errors
+    if (error instanceof Error && error.message.includes('Pusher')) {
+      return new NextResponse(JSON.stringify({ error: 'Message service error' }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    return new NextResponse(JSON.stringify({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });

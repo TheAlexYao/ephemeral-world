@@ -28,8 +28,15 @@ export function Chat({ userId, roomId }: ChatProps) {
 
   useEffect(() => {
     // Subscribe to the room channel
-    const channel = pusherClient.subscribe(`room-${roomId}`);
-    setChannel(channel);
+    try {
+      const channel = pusherClient.subscribe(`room-${roomId}`);
+      setChannel(channel);
+      
+      // Log connection state changes
+      pusherClient.connection.bind('state_change', (states: { current: string }) => {
+        console.log('Connection state changed:', states.current);
+        setConnected(states.current === 'connected');
+      });
 
     // Listen for new messages
     const handleNewMessage = (message: Message) => {
@@ -94,7 +101,13 @@ export function Chat({ userId, roomId }: ChatProps) {
         channel.unbind_all();
         channel.unsubscribe();
       }
+      // Clean up connection state binding
+      pusherClient.connection.unbind('state_change');
     };
+  } catch (error) {
+    console.error('Error in channel setup:', error);
+    setConnected(false);
+  }
   }, [roomId]);
 
   const sendMessage = async (message: string = messageInput) => {
