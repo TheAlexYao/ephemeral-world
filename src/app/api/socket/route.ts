@@ -43,7 +43,7 @@ io.on("connection", (socket: Socket) => {
       });
 
       // Store join time in Redis
-      await redis.hSet(`room:${roomId}:users`, {
+      await redis.hset(`room:${roomId}:users`, {
         [userId]: new Date().toISOString(),
       });
     } catch (error) {
@@ -60,7 +60,7 @@ io.on("connection", (socket: Socket) => {
 
       // Store message in Redis with 60s TTL
       const messageId = `${roomId}:${timestamp}`;
-      await redis.hSet(`room:${roomId}:messages`, {
+      await redis.hset(`room:${roomId}:messages`, {
         [messageId]: JSON.stringify({ userId, message, timestamp }),
       });
       await redis.expire(`room:${roomId}:messages`, 60);
