@@ -1,6 +1,6 @@
 "use client";
 
-import { SocketTest } from "@/components/socket-test";
+import { Chat } from "@/components/socket-test";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -25,7 +25,7 @@ export default function TestPage() {
 
   return (
     <main>
-      <SocketTest userId={session.user.id} />
+      <Chat userId={session.user.id} roomId="test-room" />
     </main>
   );
 }
