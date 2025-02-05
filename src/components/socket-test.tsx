@@ -23,6 +23,8 @@ export function Chat({ userId, roomId }: ChatProps) {
   const [channel, setChannel] = useState<Channel | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
+  const [debugMessages, setDebugMessages] = useState<any[]>([]);
+  const [connected, setConnected] = useState(false);
 
   useEffect(() => {
     // Subscribe to the room channel
@@ -67,8 +69,24 @@ export function Chat({ userId, roomId }: ChatProps) {
       });
     }, 5000);
 
+    // Debugging code for Pusher subscription
+    console.log("Subscribing to channel room-" + roomId);
+    channel.bind("new-message", (data: any) => {
+      console.log("Received new-message payload:", data);
+      setDebugMessages(prev => [...prev, data]);
+    });
+    channel.bind("pusher:subscription_succeeded", () => {
+      console.log("Subscription succeeded for room-" + roomId);
+      setConnected(true);
+    });
+    channel.bind("pusher:subscription_error", (status: any) => {
+      console.error("Subscription error for room-" + roomId, status);
+      setConnected(false);
+    });
+
     // Cleanup on unmount
     return () => {
+      console.log("Unsubscribing from channel room-" + roomId);
       clearInterval(cleanupInterval);
       channel.unbind_all();
       channel.unsubscribe();
@@ -133,6 +151,18 @@ export function Chat({ userId, roomId }: ChatProps) {
           className="flex-1"
         />
         <Button onClick={sendMessage}>Send</Button>
+      </div>
+
+      <div style={{ padding: '1rem', border: '1px solid #ccc', marginTop: '1rem' }}>
+        <p>Connection status: {connected ? "Connected" : "Disconnected"}</p>
+        <p>Received Messages:</p>
+        <ScrollArea style={{ height: '200px' }}>
+          {debugMessages.map((msg, index) => (
+            <div key={index}>
+              <p>{JSON.stringify(msg)}</p>
+            </div>
+          ))}
+        </ScrollArea>
       </div>
     </div>
   );
