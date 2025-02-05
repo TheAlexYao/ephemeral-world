@@ -14,8 +14,9 @@ const redis = new Redis({
   username: url.username,
   password: url.password,
   tls: {
-    rejectUnauthorized: false,
-    servername: url.hostname
+    rejectUnauthorized: true,
+    servername: url.hostname,
+    minVersion: 'TLSv1.2'
   },
   retryStrategy: (times: number) => {
     const delay = Math.min(times * 50, 2000);
