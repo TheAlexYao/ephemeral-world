@@ -32,7 +32,7 @@ const redis = new Redis(redisUrl, {
   }
 });
 
-redis.on('error', (error) => {
+redis.on('error', (error: NodeJS.ErrnoException) => {
   console.error('Redis connection error:', error);
   if (error.code === 'ECONNREFUSED') {
     console.error('Could not connect to Redis. Please check if Redis server is running.');
