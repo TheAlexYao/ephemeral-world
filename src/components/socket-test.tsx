@@ -42,8 +42,7 @@ export function Chat({ userId, roomId }: ChatProps) {
         console.log('Pusher connection state changed:', {
           previous: states.previous,
           current: states.current,
-          socketId: pusherClient.connection.socket_id,
-          timeline: pusherClient.connection.state_machine.state.timeline
+          socketId: pusherClient.connection.socket_id
         });
         setConnected(states.current === 'connected');
         if (states.current === 'failed' || states.current === 'disconnected') {
