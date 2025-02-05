@@ -17,23 +17,13 @@ export const pusherClient = new PusherClient(
     enabledTransports: ['ws', 'wss'],
     activityTimeout: 60000,
     pongTimeout: 30000,
-    timelineParams: {
-      params: { cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER! }
-    },
     channelAuthorization: {
       endpoint: '/api/pusher/auth',
       transport: 'ajax',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       }
-    },
-    auth: {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
-    },
-    disableStats: true,
-    enableAutoPing: true
+    }
   }
 );
 
