@@ -183,36 +183,30 @@ function setupSocketHandlers(io: Server) {
   });
 };
 
+let io: Server | null = null;
+
 export async function GET(req: NextRequest) {
   try {
-    // Initialize Socket.IO if not already initialized
-    if (!global.io) {
-      global.io = new Server({
-        path: "/api/socket",
+    if (!io) {
+      io = new Server({
+        path: '/api/socket',
         addTrailingSlash: false,
         cors: {
-          origin: "*",
-          methods: ["GET", "POST"],
+          origin: '*',
+          methods: ['GET', 'POST'],
           credentials: true,
         },
-        transports: ['polling', 'websocket'],
+        transports: ['websocket'],
         pingTimeout: 60000,
         pingInterval: 25000,
       });
-      setupSocketHandlers(global.io);
+
+      setupSocketHandlers(io);
     }
 
-    // @ts-ignore - req.socket is available in Edge Runtime
-    await global.io.attach(req.socket, {
-      cors: {
-        origin: "*",
-        methods: ["GET", "POST"],
-        credentials: true
-      }
-    });
-
-    return new NextResponse(null, { 
-      status: 200,
+    const res = await io.attachWebSocket(req);
+    return res || new NextResponse(null, {
+      status: 400,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST',
@@ -222,14 +216,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error('Socket error:', error);
-    if (error instanceof Error) {
-      console.error('Error details:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      });
-    }
-    return new NextResponse('Internal Server Error', { 
+    return new NextResponse('Internal Server Error', {
       status: 500,
       headers: {
         'Access-Control-Allow-Origin': '*',
