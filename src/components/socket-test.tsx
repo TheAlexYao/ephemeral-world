@@ -29,6 +29,20 @@ export function Chat({ userId, roomId }: ChatProps) {
   useEffect(() => {
     // Subscribe to the room channel
     try {
+      // Load existing messages
+      const loadMessages = async () => {
+        try {
+          const response = await fetch(`/api/socket?roomId=${roomId}`);
+          if (!response.ok) throw new Error('Failed to load messages');
+          const messages = await response.json();
+          setMessages(messages);
+        } catch (error) {
+          console.error('Error loading messages:', error);
+          setError('Failed to load messages');
+        }
+      };
+      loadMessages();
+
       // Sanitize channel name to only include allowed characters
       const sanitizedRoomId = roomId.replace(/[^a-zA-Z0-9-_]/g, '');
       const channelName = `presence-room-${sanitizedRoomId}`;

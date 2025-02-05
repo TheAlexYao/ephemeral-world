@@ -22,6 +22,37 @@ function sanitizeMessage(message: string): string {
   return message.trim().slice(0, 1000); // Limit message length to 1000 characters
 }
 
+export async function GET(req: NextRequest) {
+  try {
+    const url = new URL(req.url);
+    const roomId = url.searchParams.get('roomId');
+    
+    if (!roomId) {
+      return new NextResponse(JSON.stringify({ error: 'Missing roomId' }), { 
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Get all messages for this room
+    const messages = await redis.hgetall(`room:${roomId}:messages`);
+    const messageList = Object.values(messages || {}).map(msg => JSON.parse(msg));
+
+    // Sort by timestamp
+    messageList.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+    return new NextResponse(JSON.stringify(messageList), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    return new NextResponse(JSON.stringify({ error: 'Internal server error' }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { roomId, message, userId } = await req.json();
@@ -33,28 +64,22 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Rate limiting
-    const now = Date.now();
-    const userKey = `${userId}:${roomId}`;
-    const userCounter = messageCounters.get(userKey) || { count: 0, resetTime: now };
-
-    // Reset counter if window has passed
-    if (now > userCounter.resetTime + RATE_LIMIT_WINDOW) {
-      userCounter.count = 0;
-      userCounter.resetTime = now;
+        // Rate limiting using Redis
+    const rateKey = `rate:${roomId}:${userId}`;
+    const messageCount = await redis.incr(rateKey);
+    
+    // Set expiration on first message
+    if (messageCount === 1) {
+      await redis.expire(rateKey, 60); // 60 seconds window
     }
 
-    // Check rate limit
-    if (userCounter.count >= MAX_MESSAGES_PER_WINDOW) {
-      return new NextResponse(JSON.stringify({ error: 'Rate limit exceeded' }), { 
+    // Check rate limit - 10 messages per minute
+    if (messageCount > 10) {
+      return new NextResponse(JSON.stringify({ error: 'Rate limit exceeded. Please wait a minute.' }), { 
         status: 429,
         headers: { 'Content-Type': 'application/json' }
       });
     }
-
-    // Increment counter
-    userCounter.count++;
-    messageCounters.set(userKey, userCounter);
 
     // Sanitize message
     const sanitizedMessage = sanitizeMessage(message);
