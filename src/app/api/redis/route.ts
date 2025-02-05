@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 export async function GET(req: NextRequest) {
   try {
     // Set a test key with a TTL of 60 seconds
-    await redis.set("test-key", "Hello Redis", { EX: 60 });
+    await redis.set("test-key", "Hello Redis", "EX", 60);
     // Retrieve the value from Redis
     const value = await redis.get("test-key");
     return NextResponse.json({ key: "test-key", value });
