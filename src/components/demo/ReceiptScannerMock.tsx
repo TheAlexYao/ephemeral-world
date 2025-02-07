@@ -1,11 +1,40 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { Camera, Receipt } from 'lucide-react';
+import { useState } from 'react';
+import { Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
+
+interface ReceiptData {
+  restaurant: string;
+  location: string;
+  items: Array<{ name: string; price: number }>;
+  subtotal: number;
+  serviceCharge: number;
+  gst: number;
+  total: number;
+  currency: string;
+}
+
+const RECEIPT_DATA: ReceiptData = {
+  restaurant: 'YUMMY ROAST ENTERPRISE',
+  location: 'JALAN KUCHAI MAJU 18, OFF JLN KUCHAI LAMA, 58200 KL',
+  items: [
+    { name: 'Duck(1/4Lower)', price: 21.00 },
+    { name: 'Canto Style Hor Fun', price: 11.90 },
+    { name: 'Wantan Noodle(D)', price: 8.90 },
+    { name: 'Soup Of The Day', price: 11.00 },
+    { name: 'Plain Water', price: 1.60 }
+  ],
+  subtotal: 54.40,
+  serviceCharge: 2.70,
+  gst: 3.45,
+  total: 60.55,
+  currency: 'RM'
+};
 
 interface ScanState {
   status: 'idle' | 'aligning' | 'scanning' | 'processing' | 'complete';
@@ -16,8 +45,6 @@ interface ScanState {
 interface ReceiptScannerMockProps {
   onComplete?: () => void;
 }
-
-
 
 export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
   const [scanState, setScanState] = useState<ScanState>({
@@ -57,7 +84,7 @@ export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
         ...prev,
         status: 'scanning',
         progress: 30,
-        detectedText: ['Jalan Alor Night Market']
+        detectedText: [RECEIPT_DATA.restaurant]
       }));
       
       setTimeout(() => {
@@ -67,10 +94,11 @@ export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
           status: 'processing',
           progress: 60,
           detectedText: [
-            'Jalan Alor Night Market',
-            'Kuala Lumpur, Malaysia',
-            'Char Kuey Teow    RM 15.50',
-            'Satay (10 pcs)    RM 25.00'
+            RECEIPT_DATA.restaurant,
+            RECEIPT_DATA.location,
+            ...RECEIPT_DATA.items.slice(0, 2).map(
+              item => `${item.name}    ${RECEIPT_DATA.currency} ${item.price.toFixed(2)}`
+            )
           ]
         }));
         
@@ -81,11 +109,12 @@ export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
             status: 'complete',
             progress: 100,
             detectedText: [
-              'Jalan Alor Night Market',
-              'Kuala Lumpur, Malaysia',
-              'Char Kuey Teow    RM 15.50',
-              'Satay (10 pcs)    RM 25.00',
-              'Total:    RM 188.50'
+              RECEIPT_DATA.restaurant,
+              RECEIPT_DATA.location,
+              ...RECEIPT_DATA.items.map(
+                item => `${item.name}    ${RECEIPT_DATA.currency} ${item.price.toFixed(2)}`
+              ),
+              `Total:    ${RECEIPT_DATA.currency} ${RECEIPT_DATA.total.toFixed(2)}`
             ]
           }));
           
@@ -124,11 +153,24 @@ export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
             className="space-y-4"
           >
             <div className="relative rounded-lg overflow-hidden bg-black aspect-[3/4] w-full max-w-sm mx-auto shadow-xl">
-              {/* Camera Preview Background */}
+              {/* Receipt Image Background */}
+              <div className="absolute inset-0 bg-black">
+                <Image
+                  src="/images/sample-receipt.jpg"
+                  alt="Receipt"
+                  fill
+                  className={cn(
+                    "object-cover transition-opacity duration-500",
+                    (scanState.status as ScanState['status']) === 'idle' ? 'opacity-0' : 'opacity-100'
+                  )}
+                />
+              </div>
+              
+              {/* Camera Preview Overlay */}
               <motion.div
-                className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900"
+                className="absolute inset-0 bg-gradient-to-br from-gray-800/50 to-gray-900/50"
                 variants={previewVariants}
-                animate={scanState.status === 'aligning' ? 'aligning' : 'idle'}
+                animate="aligning"
               >
                 {/* Receipt Guidelines */}
                 <div className={cn(
@@ -138,9 +180,12 @@ export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
                   'border-white/30'
                 )}>
                   <div className="text-white/50 text-center">
-                    {scanState.status === 'idle' && (
-                      <p>Position receipt within frame</p>
-                    )}
+                    <p>
+                      {scanState.status === 'aligning' && 'Align receipt within frame...'}
+                      {scanState.status === 'scanning' && 'Hold still...'}
+                      {scanState.status === 'processing' && 'Almost done...'}
+                      {scanState.status === 'complete' && 'Perfect!'}
+                    </p>
                   </div>
                 </div>
               </motion.div>
@@ -155,7 +200,7 @@ export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
               )}
 
               {/* OCR Text Overlay */}
-              <div className="absolute inset-0 p-4">
+              <div className="absolute inset-0 p-4 pointer-events-none">
                 <AnimatePresence>
                   {scanState.detectedText?.map((text, i) => (
                     <motion.div
@@ -164,8 +209,11 @@ export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
                       initial="initial"
                       animate="animate"
                       exit="exit"
-                      className="text-sm text-blue-400 font-mono mb-2 backdrop-blur-sm bg-black/20 p-1 rounded inline-block"
-                      style={{ transitionDelay: `${i * 100}ms` }}
+                      className="text-sm text-blue-400 font-mono mb-2 backdrop-blur-sm bg-black/20 p-1 rounded inline-block max-w-full break-words"
+                      style={{ 
+                        transitionDelay: `${i * 150}ms`,
+                        textShadow: '0 1px 2px rgba(0,0,0,0.5)'
+                      }}
                     >
                       {text}
                     </motion.div>
@@ -178,51 +226,54 @@ export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
                 <Progress 
                   value={scanState.progress} 
                   className={cn(
-                    "mb-2 transition-colors",
+                    "mb-2 h-1.5 transition-colors duration-300",
                     scanState.status === 'scanning' ? 'bg-blue-400' :
                     scanState.status === 'processing' ? 'bg-yellow-400' :
                     scanState.status === 'complete' ? 'bg-green-400' : ''
                   )}
                 />
-                <p className="text-white text-sm text-center font-medium">
-                  {scanState.status === 'idle' && 'Ready to scan'}
+                <p className="text-white/90 text-sm text-center font-medium tracking-wide">
                   {scanState.status === 'aligning' && 'Aligning camera...'}
                   {scanState.status === 'scanning' && 'Scanning receipt...'}
                   {scanState.status === 'processing' && 'Processing text...'}
                   {scanState.status === 'complete' && 'Scan complete!'}
                 </p>
               </div>
-              <div className="flex justify-between text-sm">
-                <span>Subtotal</span>
-                <span>RM {MOCK_RECEIPT.subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Tax</span>
-                <span>RM {MOCK_RECEIPT.tax.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Service Charge</span>
-                <span>RM {MOCK_RECEIPT.serviceCharge.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between font-bold mt-2">
-                <span>Total</span>
-                <span>RM {MOCK_RECEIPT.total.toFixed(2)}</span>
-              </div>
-              <div className="text-sm text-gray-600 text-right">
-                ≈ USD {(MOCK_RECEIPT.total * MOCK_RECEIPT.usdRate).toFixed(2)}
-              </div>
             </div>
+            
+            {scanState.status === 'complete' && (
+              <div className="mt-4 bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm text-white/80">
+                    <span>Subtotal</span>
+                    <span>{RECEIPT_DATA.currency} {RECEIPT_DATA.subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-white/80">
+                    <span>Service Charge (5%)</span>
+                    <span>{RECEIPT_DATA.currency} {RECEIPT_DATA.serviceCharge.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-white/80">
+                    <span>GST (6%)</span>
+                    <span>{RECEIPT_DATA.currency} {RECEIPT_DATA.gst.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-medium text-white pt-2 border-t border-white/20">
+                    <span>Total</span>
+                    <span>{RECEIPT_DATA.currency} {RECEIPT_DATA.total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
-            <div className="pt-4">
-              <Button 
-                className="w-full"
-                onClick={() => {
-                  onComplete?.();
-                }}
-              >
-                Split Bill
-              </Button>
-            </div>
+            {scanState.status === 'complete' && (
+              <div className="pt-4">
+                <Button 
+                  className="w-full bg-blue-500 hover:bg-blue-600"
+                  onClick={() => onComplete?.()}
+                >
+                  Split Bill
+                </Button>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
