@@ -22,6 +22,32 @@
     - **roomId** (UUID, Foreign Key referencing ChatRoom.roomId)
     - **joinTime** (Timestamp)
     - **leaveTime** (Timestamp)
+
+4. **GroupTravelFund**
+
+    - **fundId** (UUID, Primary Key)
+    - **name** (String, e.g., "KL Trip Fund")
+    - **goalAmount** (Decimal)
+    - **currentAmount** (Decimal)
+    - **createdAt** (Timestamp)
+    - **updatedAt** (Timestamp)
+
+5. **GroupMember**
+
+    - **groupId** (UUID, Foreign Key referencing GroupTravelFund.fundId)
+    - **userId** (UUID, Foreign Key referencing User.userId)
+    - **joinedAt** (Timestamp)
+    - **role** (String, e.g., 'admin', 'member')
+
+6. **TravelContribution**
+
+    - **contributionId** (UUID, Primary Key)
+    - **fundId** (UUID, Foreign Key referencing GroupTravelFund.fundId)
+    - **userId** (UUID, Foreign Key referencing User.userId)
+    - **amount** (Decimal)
+    - **fromSplitId** (UUID, optional - links to a split payment)
+    - **message** (String, optional note about the contribution)
+    - **createdAt** (Timestamp)
 * * *
 
 ### **Ephemeral Data (Stored in Redis)**
@@ -35,6 +61,31 @@ Since chat messages are meant to be transient, they'll be stored in Redis with a
     - **content** (String)
     - **createdAt** (Timestamp)
     - **TTL/ExpiresAt** -- Managed by Redis so that the key auto-expires (e.g., 60 seconds after creation)
+
+5. **AI Suggestions (Ephemeral)**
+    - **Key Format:** `ai:suggestion:{groupId}`
+    - **Value:** JSON containing:
+      - groupContext: {
+        currentAmount: number,
+        goalAmount: number,
+        recentSplits: Array<{
+          amount: number,
+          participants: string[],
+          date: string
+        }>,
+        recentContributions: Array<{
+          userId: string,
+          amount: number,
+          date: string
+        }>
+      }
+      - suggestions: Array<{
+        targetUsers: string[],
+        suggestedAmount: number,
+        message: string,
+        context: string
+      }>
+    - **TTL:** 1 hour (to maintain context relevance)
 
 _Implementation Note:_  
 When a user sends a message, your server pushes it into Redis (e.g., as a JSON value) and sets the key's TTL to 60 seconds. The WebSocket server broadcasts the message to all clients in the room. Once the TTL expires, Redis automatically deletes the message from memory, keeping the chat truly ephemeral.

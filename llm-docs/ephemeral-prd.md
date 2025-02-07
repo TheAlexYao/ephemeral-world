@@ -35,6 +35,12 @@ A minimalist, real‑time chat tool for spontaneous conversations. No login hass
 5. **Deep Linking:**  
 • Allow users to join rooms instantly via shared links.
 
+6. **Group Travel Fund:**  
+• Automatic group creation from split participants  
+• AI-driven group contribution suggestions  
+• Collective progress tracking toward shared goals  
+• Group-aware recommendations based on split patterns
+
 ### **Technical Architecture:**
 
 - **Frontend:** Next.js (app router), React, TypeScript, Tailwind CSS, Radix UI, Lucide‑React
