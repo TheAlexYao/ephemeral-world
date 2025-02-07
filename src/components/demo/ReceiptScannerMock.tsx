@@ -154,13 +154,15 @@ export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
           >
             <div className="relative rounded-lg overflow-hidden bg-black aspect-[3/4] w-full max-w-sm mx-auto shadow-xl">
               {/* Receipt Image Background */}
-              <div className="absolute inset-0 bg-black">
+              <div className="relative w-full h-full bg-black">
                 <Image
                   src="/images/sample-receipt.jpg"
                   alt="Receipt"
                   fill
+                  sizes="(max-width: 384px) 100vw, 384px"
+                  priority
                   className={cn(
-                    "object-cover transition-opacity duration-500",
+                    "object-contain transition-opacity duration-500",
                     (scanState.status as ScanState['status']) === 'idle' ? 'opacity-0' : 'opacity-100'
                   )}
                 />
