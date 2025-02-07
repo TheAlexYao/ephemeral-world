@@ -10,6 +10,9 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+
+export const dynamic = 'force-dynamic';
+
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
 import { chatRooms, sessionLogs } from "@/drizzle/schema";

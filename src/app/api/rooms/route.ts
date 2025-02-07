@@ -1,4 +1,8 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
+
+export const dynamic = 'force-dynamic';
+
 import { db } from '@/lib/db';
 import { chatRooms, sessionLogs, users } from '@/drizzle/schema';
 import { eq, and, isNull } from 'drizzle-orm';
