@@ -2,14 +2,15 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const { amount, isTestMode, currency, participants } = await request.json();
+    const { amount, isTestMode, currency, paidBy, participants } = await request.json();
 
     // For testing, we'll simulate a backend response
     // In production, this would make calls to payment/conversion services
     const mockResponse = {
       amount: amount, // The original amount
       currency: currency,
-      participants: participants,
+      paidBy, // The person who paid and scanned the receipt
+      participants, // People who need to pay back
       status: 'ready',
       paymentId: Math.random().toString(36).substring(7),
     };

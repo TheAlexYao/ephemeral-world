@@ -23,11 +23,12 @@ interface SplitCardProps {
   amount: number;
   currency: string;
   usdRate: number;
-  participants: Participant[];
+  paidBy: Participant; // The person who paid for the meal
+  participants: Participant[]; // Other participants who need to pay back
   onComplete?: () => void;
 }
 
-export function SplitCard({ amount, currency, usdRate, participants, onComplete, isTestMode = true }: SplitCardProps) {
+export function SplitCard({ amount, currency, usdRate, paidBy, participants, onComplete, isTestMode = true }: SplitCardProps) {
   const [joinedParticipants, setJoinedParticipants] = useState<Participant[]>([]);
   const [showWallet, setShowWallet] = useState(false);
   const [completed, setCompleted] = useState(false);
@@ -90,9 +91,15 @@ export function SplitCard({ amount, currency, usdRate, participants, onComplete,
       <div className="bg-blue-50 rounded-lg p-4 shadow-sm">
         {/* Header */}
         <div className="mb-4">
-          <h3 className="font-medium">Split Request</h3>
+          <div className="flex items-center gap-2 mb-2">
+            <Avatar className="h-6 w-6">
+              <AvatarImage src={paidBy.avatar} />
+              <AvatarFallback>{paidBy.name[0]}</AvatarFallback>
+            </Avatar>
+            <h3 className="font-medium">{paidBy.name} paid</h3>
+          </div>
           <div className="text-sm text-gray-600">
-            {currency} {amount.toFixed(2)} • {participants.length} people
+            {currency} {amount.toFixed(2)} • Split with {participants.length} others
           </div>
         </div>
 
@@ -101,6 +108,7 @@ export function SplitCard({ amount, currency, usdRate, participants, onComplete,
           <div className="text-center space-y-3">
             {/* Local Currency (Primary) */}
             <div>
+              <div className="text-sm text-gray-500 mb-1">Your share to pay {paidBy.name}</div>
               <div className="text-2xl font-semibold">
                 {currency} {perPersonAmount.toFixed(2)}
               </div>

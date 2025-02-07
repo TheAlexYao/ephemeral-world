@@ -262,6 +262,9 @@ export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
             
             {scanState.status === 'complete' && (
               <div className="mt-4 bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+                <div className="text-white/80 text-sm mb-3">
+                  Since you paid and scanned the receipt, others will pay you back.
+                </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm text-white/80">
                     <span>Subtotal</span>
@@ -289,7 +292,7 @@ export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
                   className="w-full bg-blue-500 hover:bg-blue-600"
                   onClick={() => onComplete?.()}
                 >
-                  Split Bill
+                  Get Paid Back
                 </Button>
               </div>
             )}

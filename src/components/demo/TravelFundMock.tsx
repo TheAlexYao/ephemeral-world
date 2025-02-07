@@ -15,26 +15,28 @@ const MOCK_DATA = {
   currentAmount: 1556,
   goalAmount: 3000,
   recentSplit: {
-    amount: 188.50,
-    currency: 'MYR',
-    restaurant: 'Jalan Alor Night Market',
+    amount: 30.00,
+    currency: 'USD',
+    restaurant: 'Test Split Payment',
+    paidBy: { id: '1', name: 'Alice', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alice', verified: true },
     participants: [
-      { id: '1', name: 'Alex', avatar: '/avatars/alex.jpg' },
-      { id: '2', name: 'Sarah', avatar: '/avatars/sarah.jpg' },
-      { id: '3', name: 'Mike', avatar: '/avatars/mike.jpg' },
-      { id: '4', name: 'Lisa', avatar: '/avatars/lisa.jpg' },
+      { id: '2', name: 'Bob', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bob', verified: true },
+      { id: '3', name: 'Charlie', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Charlie', verified: true },
     ]
   },
   suggestion: {
-    message: "Great choice for dinner! Want to add $25 to our KL trip fund?",
-    amount: 25
+    message: "Test the split payment feature!",
+    amount: 30
   }
 }
+
+import { SplitCard } from './SplitCard'
 
 export function TravelFundMessage() {
   const [showContribute, setShowContribute] = useState(true)
   const [currentAmount, setCurrentAmount] = useState(MOCK_DATA.currentAmount)
   const [showConfetti, setShowConfetti] = useState(false)
+  const [showSplitTest, setShowSplitTest] = useState(false)
   
   const handleContribute = () => {
     setCurrentAmount(prev => prev + MOCK_DATA.suggestion.amount)
@@ -115,12 +117,30 @@ export function TravelFundMessage() {
                 </Button>
                 <Button 
                   variant="outline"
-                  onClick={() => setShowContribute(false)}
+                  onClick={() => setShowSplitTest(prev => !prev)}
                   className="text-sm"
                 >
-                  Maybe Later
+                  {showSplitTest ? 'Hide Split Test' : 'Test Split Payment'}
                 </Button>
               </div>
+
+              {/* Split Payment Test */}
+              {showSplitTest && (
+                <div className="mt-4">
+                  <SplitCard
+                    amount={MOCK_DATA.recentSplit.amount}
+                    currency={MOCK_DATA.recentSplit.currency}
+                    usdRate={1}
+                    paidBy={MOCK_DATA.recentSplit.paidBy}
+                    participants={MOCK_DATA.recentSplit.participants}
+                    isTestMode={true}
+                    onComplete={() => {
+                      setShowConfetti(true);
+                      setShowSplitTest(false);
+                    }}
+                  />
+                </div>
+              )}
             </motion.div>
           ) : (
             <motion.div
