@@ -1,60 +1,172 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ReceiptScannerMock } from './ReceiptScannerMock';
 import { ReceiptMessage } from './ReceiptMessage';
+import { SplitCard } from './SplitCard';
 import { TravelFundMessage } from './TravelFundMock';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// Using the same mock data from ReceiptScannerMock
-const MOCK_RECEIPT = {
-  restaurant: 'Jalan Alor Night Market',
-  location: 'Kuala Lumpur, Malaysia',
-  items: [
-    { name: 'Char Kuey Teow', price: 15.50 },
-    { name: 'Satay (10 pcs)', price: 25.00 },
-    { name: 'Nasi Goreng', price: 14.00 },
-    { name: 'Roti Canai', price: 8.00 },
-    { name: 'Teh Tarik (4x)', price: 16.00 },
-    { name: 'Grilled Stingray', price: 45.00 },
-    { name: 'Coconut Water (4x)', price: 20.00 }
-  ],
-  subtotal: 143.50,
-  tax: 25.00,
-  serviceCharge: 20.00,
-  total: 188.50,
-  currency: 'MYR',
-  usdRate: 0.21,
-  date: new Date().toISOString()
-};
+import { MOCK_PARTICIPANTS, MOCK_RECEIPT } from './mockData';
+
+const ANIMATION_DELAYS = {
+  SPLIT_SHOW: 1000,
+  TRAVEL_FUND_SHOW: 1000,
+} as const;
+
+interface ReceiptData {
+  restaurant: string;
+  location: string;
+  items: { name: string; price: number; }[];
+  subtotal: number;
+  tax: number;
+  serviceCharge: number;
+  total: number;
+  currency: string;
+  usdRate: number;
+  date: string;
+}
+
+type ChatMessage =
+  | {
+      id: string;
+      userId: string;
+      type: 'text';
+      content: string;
+    }
+  | {
+      id: string;
+      userId: string;
+      type: 'receipt';
+      data: ReceiptData;
+    }
+  | {
+      id: string;
+      userId: string;
+      type: 'split';
+      data: ReceiptData;
+    }
+  | {
+      id: string;
+      userId: string;
+      type: 'travel-fund';
+    };
 
 export function DemoChatSequence() {
-  const [showReceipt, setShowReceipt] = useState(false);
+  const generateMessageId = () => `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: '1',
+      userId: '2',
+      content: 'We just finished dinner at Jalan Alor in KL.',
+      type: 'text'
+    }
+  ]);
+  const [showScanner, setShowScanner] = useState(false);
+  const [showSplit, setShowSplit] = useState(false);
   const [showTravelFund, setShowTravelFund] = useState(false);
 
+  const addMessage = (message: ChatMessage) => {
+    setMessages(prev => [...prev, message]);
+  };
+
   return (
-    <div className="max-w-md mx-auto space-y-4">
-      {/* Receipt Scanner */}
-      <div className="bg-white rounded-lg p-4 shadow">
-        <h3 className="text-lg font-semibold mb-4">Receipt Scanner Demo</h3>
-        <ReceiptScannerMock onComplete={() => {
-          setShowReceipt(true);
-          // Show travel fund suggestion after a delay
-          setTimeout(() => setShowTravelFund(true), 1000);
-        }} />
+    <div className="max-w-md mx-auto bg-white rounded-lg shadow overflow-hidden">
+      {/* Chat Header */}
+      <div className="p-4 border-b">
+        <h3 className="font-semibold">KL Trip Group</h3>
+        <div className="flex items-center gap-1 mt-2">
+          {MOCK_PARTICIPANTS.map(user => (
+            <Avatar key={user.id} className="w-6 h-6">
+              <AvatarImage src={user.avatar} />
+              <AvatarFallback>{user.name[0]}</AvatarFallback>
+            </Avatar>
+          ))}
+          <span className="text-xs text-gray-500 ml-2">
+            {MOCK_PARTICIPANTS.length} verified users
+          </span>
+        </div>
       </div>
 
       {/* Chat Messages */}
-      <div className="bg-white rounded-lg p-4 shadow">
-        <h3 className="text-lg font-semibold mb-4">Chat Messages</h3>
-        <div className="space-y-4">
-          {showReceipt && (
-            <ReceiptMessage 
-              receipt={MOCK_RECEIPT}
-              onSplit={() => setShowTravelFund(true)}
+      <div className="p-4 h-[500px] overflow-y-auto space-y-4">
+        {messages.map((msg, i) => {
+          switch (msg.type) {
+            case 'receipt':
+              return <ReceiptMessage key={msg.id} receipt={msg.data} />;
+            case 'split':
+              return (
+                <SplitCard
+                  key={msg.id}
+                  amount={MOCK_RECEIPT.total}
+                  currency={MOCK_RECEIPT.currency}
+                  usdRate={MOCK_RECEIPT.usdRate}
+                  participants={MOCK_PARTICIPANTS}
+                  onComplete={() => {
+                    setTimeout(() => setShowTravelFund(true), ANIMATION_DELAYS.TRAVEL_FUND_SHOW);
+                  }}
+                />
+              );
+            case 'travel-fund':
+              return <TravelFundMessage key={msg.id} />;
+            default:
+              return (
+                <div
+                  key={msg.id}
+                  className={`flex items-start gap-2 ${msg.userId === '1' ? 'flex-row-reverse' : ''}`}
+                >
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={MOCK_PARTICIPANTS.find(p => p.id === msg.userId)?.avatar} />
+                    <AvatarFallback>U</AvatarFallback>
+                  </Avatar>
+                  <div className={`rounded-lg p-3 ${msg.userId === '1' ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}>
+                    {msg.content}
+                  </div>
+                </div>
+              );
+          }
+        })}
+
+        {showScanner && (
+          <div className="relative">
+            <ReceiptScannerMock
+              onComplete={() => {
+                setShowScanner(false);
+                addMessage({
+                  id: generateMessageId(),
+                  userId: '1',
+                  type: 'receipt',
+                  data: MOCK_RECEIPT
+                });
+                setTimeout(() => {
+                  setShowSplit(true);
+                  addMessage({
+                    id: generateMessageId(),
+                    userId: 'system',
+                    type: 'split',
+                    data: MOCK_RECEIPT
+                  });
+                }, ANIMATION_DELAYS.SPLIT_SHOW);
+              }}
             />
-          )}
-          {showTravelFund && <TravelFundMessage />}
-        </div>
+          </div>
+        )}
+
+        {showTravelFund && (
+          <TravelFundMessage />
+        )}
+      </div>
+
+      {/* Chat Input */}
+      <div className="p-4 border-t">
+        <button
+          onClick={() => setShowScanner(true)}
+          className="w-full py-2 px-4 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+        >
+          Click to start demo flow
+        </button>
       </div>
     </div>
   );
