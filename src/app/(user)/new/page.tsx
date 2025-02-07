@@ -17,22 +17,41 @@ export default function NewGroupPage() {
   const [shareLink, setShareLink] = useState('');
 
   const handleCreateGroup = async () => {
+    if (!groupName) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a group name',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
       const response = await fetch('/api/create-room', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: groupName })
       });
 
+      const data = await response.json();
+      console.log('Create room response:', data);
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error);
+        throw new Error(data.error || 'Failed to create room');
       }
 
-      const { room } = await response.json();
-      setShareLink(room.deepLink);
+      setShareLink(data.room.deepLink);
+      toast({
+        title: 'Success',
+        description: 'Room created successfully!'
+      });
     } catch (error: any) {
       console.error('Failed to create room:', error);
-      // You could show an error toast here
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create room',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -46,12 +65,24 @@ export default function NewGroupPage() {
   };
 
   const handleStartChat = async () => {
-    if (!shareLink) return;
+    if (!shareLink) {
+      toast({
+        title: 'Error',
+        description: 'No share link available',
+        variant: 'destructive'
+      });
+      return;
+    }
     
     try {
+      console.log('Share link:', shareLink);
       // Extract roomId from World deep link
-      const pathParam = new URL(shareLink).searchParams.get('path');
+      const url = new URL(shareLink);
+      console.log('URL parsed:', url.toString());
+      const pathParam = url.searchParams.get('path');
+      console.log('Path param:', pathParam);
       const roomId = pathParam?.split('/').pop();
+      console.log('Room ID:', roomId);
       
       if (!roomId) {
         throw new Error('Invalid room ID');
@@ -63,16 +94,26 @@ export default function NewGroupPage() {
         headers: { 'Content-Type': 'application/json' }
       });
 
+      const data = await joinResponse.json();
+      console.log('Join response:', data);
+
       if (!joinResponse.ok) {
-        const error = await joinResponse.json();
-        throw new Error(error.error || 'Failed to join room');
+        throw new Error(data.error || 'Failed to join room');
       }
 
       // Only redirect after successfully joining
-      router.push(`/chats?room=${roomId}`);
-    } catch (error) {
+      const chatUrl = `/chats?room=${roomId}`;
+      console.log('Redirecting to:', chatUrl);
+      
+      // Force a hard navigation
+      window.location.href = chatUrl;
+    } catch (error: any) {
       console.error('Failed to start chat:', error);
-      // You could show an error toast here
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to start chat',
+        variant: 'destructive'
+      });
     }
   };
 
