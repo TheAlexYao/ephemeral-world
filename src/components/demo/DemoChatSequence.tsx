@@ -15,18 +15,7 @@ const ANIMATION_DELAYS = {
   TRAVEL_FUND_SHOW: 1000,
 } as const;
 
-interface ReceiptData {
-  restaurant: string;
-  location: string;
-  items: { name: string; price: number; }[];
-  subtotal: number;
-  tax: number;
-  serviceCharge: number;
-  total: number;
-  currency: string;
-  usdRate: number;
-  date: string;
-}
+import type { ReceiptData } from './mockData';
 
 type ChatMessage =
   | {

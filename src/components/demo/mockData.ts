@@ -5,7 +5,20 @@ export const MOCK_PARTICIPANTS = [
   { id: '4', name: 'Lisa', avatar: '/avatars/lisa.jpg', verified: true },
 ];
 
-export const MOCK_RECEIPT = {
+export interface ReceiptData {
+  restaurant: string;
+  location: string;
+  items: { name: string; price: number; }[];
+  subtotal: number;
+  tax: number;
+  serviceCharge: number;
+  total: number;
+  currency: string;
+  usdRate: number;
+  date: string;
+}
+
+export const MOCK_RECEIPT: ReceiptData = {
   restaurant: 'Jalan Alor Night Market',
   location: 'Kuala Lumpur, Malaysia',
   items: [
@@ -24,4 +37,4 @@ export const MOCK_RECEIPT = {
   currency: 'MYR',
   usdRate: 0.21,
   date: new Date().toISOString()
-} as const;
+};
