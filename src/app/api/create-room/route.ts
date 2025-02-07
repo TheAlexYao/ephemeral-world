@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
-import { chatRooms } from "@/drizzle/schema";
+import { chatRooms, sessionLogs } from "@/drizzle/schema";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import redis from "@/lib/redis";
@@ -97,6 +97,15 @@ export async function POST(req: NextRequest) {
       createdBy: userId,
       deepLink,
       active: true,
+    });
+
+    // Create initial session log for room creator
+    await db.insert(sessionLogs).values({
+      sessionId: randomUUID(), // Generate a unique session ID
+      roomId,
+      userId,
+      joinTime: new Date().toISOString(),
+      leaveTime: null
     });
 
     // Return success response with room details

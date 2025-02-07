@@ -120,17 +120,19 @@ export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] max-w-2xl mx-auto bg-white rounded-lg shadow-lg">
+    <div className="flex flex-col h-[calc(100dvh-4rem)] max-w-2xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden safe-area-inset-bottom">
       {/* Chat Header */}
-      <div className="p-4 border-b">
-        <h3 className="font-semibold">Group Chat</h3>
-        <div className="flex items-center gap-1 mt-2">
-          {participants.map(user => (
-            <Avatar key={user.id} className="w-6 h-6">
-              <AvatarImage src={user.avatar} />
-              <AvatarFallback>{user.name[0]}</AvatarFallback>
-            </Avatar>
-          ))}
+      <div className="flex-none p-3 border-b">
+        <h3 className="font-semibold text-sm">Group Chat</h3>
+        <div className="flex items-center gap-1 mt-1">
+          <div className="flex -space-x-2 overflow-hidden">
+            {participants.map(user => (
+              <Avatar key={user.id} className="w-6 h-6 border-2 border-white">
+                <AvatarImage src={user.avatar} />
+                <AvatarFallback>{user.name[0]}</AvatarFallback>
+              </Avatar>
+            ))}
+          </div>
           <span className="text-xs text-gray-500 ml-2">
             {participants.length} participants
           </span>
@@ -138,7 +140,7 @@ export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
       </div>
 
       {/* Chat Messages */}
-      <div className="flex-1 p-4 overflow-y-auto space-y-4">
+      <div className="flex-1 p-3 overflow-y-auto space-y-3 overscroll-contain touch-pan-y">
         {messages.map((msg) => {
           const isCurrentUser = msg.userId === currentUser.id;
           const user = participants.find(p => p.id === msg.userId);
@@ -191,8 +193,8 @@ export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t">
-        <div className="flex gap-2">
+      <div className="flex-none p-3 border-t">
+        <div className="flex gap-2 items-center">
           <Button
             variant="outline"
             size="icon"

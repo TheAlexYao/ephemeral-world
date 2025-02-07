@@ -49,8 +49,8 @@ export default function NewGroupPage() {
   };
 
   return (
-    <div className="p-4 space-y-6">
-      <h1 className="text-2xl font-bold">Create New Group</h1>
+    <div className="p-4 space-y-4 h-[calc(100dvh-4rem)] overflow-y-auto">
+      <h1 className="text-xl font-bold">Create New Group</h1>
       
       <div className="space-y-4">
         <Input

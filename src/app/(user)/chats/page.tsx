@@ -91,7 +91,7 @@ export default function ChatsPage() {
   }, [session?.user?.id]);
 
   return (
-    <div className="h-[calc(100vh-4rem)]">
+    <div className="h-[calc(100dvh-4rem)] overflow-hidden">
       {isLoading ? (
         <div className="flex items-center justify-center h-full">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
