@@ -69,9 +69,19 @@ export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
   };
 
   const detectedTextVariants = {
-    initial: { opacity: 0, x: -20 },
-    animate: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: 20 }
+    initial: { opacity: 0, y: 10, scale: 0.95 },
+    animate: { 
+      opacity: 1, 
+      y: 0, 
+      scale: 1,
+      transition: { duration: 0.3, ease: 'easeOut' }
+    },
+    exit: { 
+      opacity: 0, 
+      y: -10, 
+      scale: 0.95,
+      transition: { duration: 0.2, ease: 'easeIn' }
+    }
   };
 
   const startScan = () => {
@@ -84,7 +94,7 @@ export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
         ...prev,
         status: 'scanning',
         progress: 30,
-        detectedText: [RECEIPT_DATA.restaurant]
+        detectedText: ['Detecting text...', RECEIPT_DATA.restaurant]
       }));
       
       setTimeout(() => {
@@ -94,10 +104,11 @@ export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
           status: 'processing',
           progress: 60,
           detectedText: [
-            RECEIPT_DATA.restaurant,
-            RECEIPT_DATA.location,
+            `Restaurant: ${RECEIPT_DATA.restaurant}`,
+            `Location: ${RECEIPT_DATA.location}`,
+            'Items:',
             ...RECEIPT_DATA.items.slice(0, 2).map(
-              item => `${item.name}    ${RECEIPT_DATA.currency} ${item.price.toFixed(2)}`
+              item => `  • ${item.name.padEnd(20)} ${RECEIPT_DATA.currency} ${item.price.toFixed(2)}`
             )
           ]
         }));
@@ -109,12 +120,18 @@ export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
             status: 'complete',
             progress: 100,
             detectedText: [
-              RECEIPT_DATA.restaurant,
-              RECEIPT_DATA.location,
+              `Restaurant: ${RECEIPT_DATA.restaurant}`,
+              `Location: ${RECEIPT_DATA.location}`,
+              'Items:',
               ...RECEIPT_DATA.items.map(
-                item => `${item.name}    ${RECEIPT_DATA.currency} ${item.price.toFixed(2)}`
+                item => `  • ${item.name.padEnd(20)} ${RECEIPT_DATA.currency} ${item.price.toFixed(2)}`
               ),
-              `Total:    ${RECEIPT_DATA.currency} ${RECEIPT_DATA.total.toFixed(2)}`
+              '----------------------------------------',
+              `Subtotal:${' '.repeat(14)} ${RECEIPT_DATA.currency} ${RECEIPT_DATA.subtotal.toFixed(2)}`,
+              `Service Charge:${' '.repeat(8)} ${RECEIPT_DATA.currency} ${RECEIPT_DATA.serviceCharge.toFixed(2)}`,
+              `GST:${' '.repeat(19)} ${RECEIPT_DATA.currency} ${RECEIPT_DATA.gst.toFixed(2)}`,
+              '----------------------------------------',
+              `Total:${' '.repeat(17)} ${RECEIPT_DATA.currency} ${RECEIPT_DATA.total.toFixed(2)}`
             ]
           }));
           
@@ -211,7 +228,7 @@ export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
                       initial="initial"
                       animate="animate"
                       exit="exit"
-                      className="text-sm text-blue-400 font-mono mb-2 backdrop-blur-sm bg-black/20 p-1 rounded inline-block max-w-full break-words"
+                      className="text-sm text-emerald-300 font-mono mb-2 backdrop-blur-md bg-black/30 px-2 py-1 rounded-md inline-block max-w-full break-words shadow-lg"
                       style={{ 
                         transitionDelay: `${i * 150}ms`,
                         textShadow: '0 1px 2px rgba(0,0,0,0.5)'
