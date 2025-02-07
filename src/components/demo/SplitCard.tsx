@@ -67,7 +67,8 @@ export function SplitCard({ amount, currency, usdRate, paidBy, participants, onC
           amount: testAmount,
           isTestMode,
           currency: currency,
-          participants: participants.length
+          paidBy, // Add who paid
+          participants // Add who needs to pay back
         })
       });
 
@@ -75,7 +76,12 @@ export function SplitCard({ amount, currency, usdRate, paidBy, participants, onC
       
       const details = await response.json();
       setPaymentDetails(details);
-      setShowWallet(true);
+      
+      // Simulate payment success after a short delay
+      setTimeout(() => {
+        setCompleted(true);
+        onComplete?.();
+      }, 1000);
     } catch (error) {
       console.error('Payment preparation error:', error);
       // Handle error
@@ -167,7 +173,7 @@ export function SplitCard({ amount, currency, usdRate, paidBy, participants, onC
 
         {/* Payment UI */}
         <AnimatePresence mode="wait">
-          {showWallet && !completed && (
+          {!completed && joinedParticipants.length === participants.length && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
