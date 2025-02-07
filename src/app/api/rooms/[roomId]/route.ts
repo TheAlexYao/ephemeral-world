@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { chatRooms, sessionLogs, users } from '@/drizzle/schema';
 import { eq, and, isNull } from 'drizzle-orm';
-import { Session } from 'next-auth';
 import { ChatRoom } from '@/types';
 
 export async function GET(

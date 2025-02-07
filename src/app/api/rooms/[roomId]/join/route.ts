@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { chatRooms, sessionLogs } from "@/drizzle/schema";
-import { eq } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { randomUUID } from "crypto";
 
 export async function POST(
   req: NextRequest,
@@ -40,9 +41,11 @@ export async function POST(
       .select()
       .from(sessionLogs)
       .where(
-        eq(sessionLogs.roomId, roomId),
-        eq(sessionLogs.userId, userId),
-        eq(sessionLogs.leaveTime, null)
+        and(
+          eq(sessionLogs.roomId, roomId),
+          eq(sessionLogs.userId, userId),
+          isNull(sessionLogs.leaveTime)
+        )
       )
       .execute();
 
@@ -55,9 +58,10 @@ export async function POST(
 
     // Create new session log
     await db.insert(sessionLogs).values({
+      sessionId: randomUUID(),
       roomId,
       userId,
-      joinTime: new Date(),
+      joinTime: new Date().toISOString(),
       leaveTime: null
     });
 
