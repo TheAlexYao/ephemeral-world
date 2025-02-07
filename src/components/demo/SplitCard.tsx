@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { Token } from '@worldcoin/mini-apps-ui-kit-react';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Check, Wallet } from 'lucide-react';
+
 
 interface Participant {
   id: string;
@@ -17,6 +19,7 @@ interface Participant {
 }
 
 interface SplitCardProps {
+  isTestMode?: boolean; // For development/testing
   amount: number;
   currency: string;
   usdRate: number;
@@ -24,12 +27,13 @@ interface SplitCardProps {
   onComplete?: () => void;
 }
 
-export function SplitCard({ amount, currency, usdRate, participants, onComplete }: SplitCardProps) {
+export function SplitCard({ amount, currency, usdRate, participants, onComplete, isTestMode = true }: SplitCardProps) {
   const [joinedParticipants, setJoinedParticipants] = useState<Participant[]>([]);
   const [showWallet, setShowWallet] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState<{ amount: number } | null>(null);
 
-  // Calculate per person amount
+  // Calculate amounts
   const perPersonAmount = amount / participants.length;
   const perPersonUSD = perPersonAmount * usdRate;
 
@@ -49,10 +53,32 @@ export function SplitCard({ amount, currency, usdRate, participants, onComplete 
     return () => clearInterval(joinInterval);
   }, [participants]);
 
-  const handlePayment = () => {
-    setShowWallet(false);
-    setCompleted(true);
-    setTimeout(() => onComplete?.(), 1000);
+  const handlePayment = async () => {
+    try {
+      // Get payment details from backend
+      // In test mode, cap the amount to 0.01 WLD worth
+      const testAmount = isTestMode ? Math.min(perPersonAmount, 0.05) : perPersonAmount;
+      
+      const response = await fetch('/api/split-payment/prepare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: testAmount,
+          isTestMode,
+          currency: currency,
+          participants: participants.length
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to prepare payment');
+      
+      const details = await response.json();
+      setPaymentDetails(details);
+      setShowWallet(true);
+    } catch (error) {
+      console.error('Payment preparation error:', error);
+      // Handle error
+    }
   };
 
   return (
@@ -72,13 +98,18 @@ export function SplitCard({ amount, currency, usdRate, participants, onComplete 
 
         {/* Amount Display */}
         <div className="bg-white rounded-md p-3 mb-4">
-          <div className="text-center">
-            <div className="text-2xl font-semibold">
-              ${perPersonUSD.toFixed(2)}
+          <div className="text-center space-y-3">
+            {/* Local Currency (Primary) */}
+            <div>
+              <div className="text-2xl font-semibold">
+                {currency} {perPersonAmount.toFixed(2)}
+              </div>
+              <div className="text-sm text-gray-500">
+                ${perPersonUSD.toFixed(2)} USD
+              </div>
             </div>
-            <div className="text-sm text-gray-500">
-              {currency} {perPersonAmount.toFixed(2)} per person
-            </div>
+            
+
           </div>
         </div>
 

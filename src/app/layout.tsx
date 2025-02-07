@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { bricolage } from "@/lib/fonts";
 import "./globals.css";
+import "@worldcoin/mini-apps-ui-kit-react/styles.css";
 import MiniKitProvider from "@/components/minikit-provider";
 import dynamic from "next/dynamic";
 import NextAuthProvider from "@/components/next-auth-provider";
