@@ -120,96 +120,77 @@ export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-4rem)] max-w-2xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden safe-area-inset-bottom">
-      {/* Chat Header */}
-      <div className="flex-none p-3 border-b">
-        <h3 className="font-semibold text-sm">Group Chat</h3>
-        <div className="flex items-center gap-1 mt-1">
-          <div className="flex -space-x-2 overflow-hidden">
-            {participants.map(user => (
-              <Avatar key={user.id} className="w-6 h-6 border-2 border-white">
-                <AvatarImage src={user.avatar} />
-                <AvatarFallback>{user.name[0]}</AvatarFallback>
-              </Avatar>
-            ))}
-          </div>
-          <span className="text-xs text-gray-500 ml-2">
-            {participants.length} participants
-          </span>
+    <div className="h-[calc(100dvh-var(--miniapp-top-height))] w-full flex flex-col overflow-hidden">
+      {/* Messages Container */}
+      <div className="flex-1 overflow-y-auto pb-4">
+        <div className="space-y-4 p-4">
+          {messages.map((msg) => {
+            const isCurrentUser = msg.userId === currentUser.id;
+            const user = participants.find(p => p.id === msg.userId);
+
+            switch (msg.type) {
+              case 'split':
+                return (
+                  <div key={msg.id} className="w-full max-w-md mx-auto">
+                    <SplitCard
+                      paidBy={currentUser}
+                      participants={participants.filter(p => p.id !== currentUser.id)}
+                      onComplete={async () => {
+                        // Show travel fund after payment completes
+                        setTimeout(async () => {
+                          await sendMessage('Travel Fund', 'travel-fund');
+                          setShowTravelFund(true);
+                        }, 1000);
+                      }}
+                    />
+                  </div>
+                );
+              case 'travel-fund':
+                return <TravelFundMessage key={msg.id} />;
+              default:
+                return (
+                  <div
+                    key={msg.id}
+                    className={cn(
+                      'flex items-start gap-2',
+                      isCurrentUser ? 'flex-row-reverse' : ''
+                    )}
+                  >
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={user?.avatar} />
+                      <AvatarFallback>{user?.name[0] ?? 'U'}</AvatarFallback>
+                    </Avatar>
+                    <div 
+                      className={cn(
+                        'rounded-lg p-3 max-w-[80%]',
+                        isCurrentUser ? 'bg-blue-500 text-white' : 'bg-gray-100'
+                      )}
+                    >
+                      {msg.content}
+                    </div>
+                  </div>
+                );
+            }
+          })}
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {/* Chat Messages */}
-      <div className="flex-1 p-3 overflow-y-auto space-y-3 overscroll-contain touch-pan-y">
-        {messages.map((msg) => {
-          const isCurrentUser = msg.userId === currentUser.id;
-          const user = participants.find(p => p.id === msg.userId);
-
-          switch (msg.type) {
-            case 'split':
-              return (
-                <div key={msg.id} className="w-full max-w-md mx-auto">
-                  <SplitCard
-                    paidBy={currentUser}
-                    participants={participants.filter(p => p.id !== currentUser.id)}
-                    onComplete={async () => {
-                      // Show travel fund after payment completes
-                      setTimeout(async () => {
-                        await sendMessage('Travel Fund', 'travel-fund');
-                        setShowTravelFund(true);
-                      }, 1000);
-                    }}
-                  />
-                </div>
-              );
-            case 'travel-fund':
-              return <TravelFundMessage key={msg.id} />;
-            default:
-              return (
-                <div
-                  key={msg.id}
-                  className={cn(
-                    'flex items-start gap-2',
-                    isCurrentUser ? 'flex-row-reverse' : ''
-                  )}
-                >
-                  <Avatar className="w-8 h-8">
-                    <AvatarImage src={user?.avatar} />
-                    <AvatarFallback>{user?.name[0] ?? 'U'}</AvatarFallback>
-                  </Avatar>
-                  <div 
-                    className={cn(
-                      'rounded-lg p-3 max-w-[80%]',
-                      isCurrentUser ? 'bg-blue-500 text-white' : 'bg-gray-100'
-                    )}
-                  >
-                    {msg.content}
-                  </div>
-                </div>
-              );
-          }
-        })}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input */}
-      <div className="flex-none p-3 border-t">
-        <div className="flex gap-2 items-center">
+      {/* Input Area - Fixed at bottom */}
+      <div className="border-t bg-background p-4 pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))]">
+        <div className="flex items-center gap-2">
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
-            onClick={async () => {
-              // Start split payment flow
-              await sendMessage('Split Payment', 'split');
-              setShowSplit(true);
-            }}
+            className="shrink-0"
+            onClick={() => setShowSplit(true)}
           >
-            <Camera className="w-4 h-4" />
+            <Camera className="h-6 w-6" />
           </Button>
           <Input
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            placeholder="Type a message"
+            placeholder="Type a message..."
             className="flex-1"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -219,14 +200,18 @@ export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
             }}
           />
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
+            className="shrink-0"
             onClick={handleSendMessage}
+            disabled={!inputMessage.trim()}
           >
-            <Send className="w-4 h-4" />
+            <Send className="h-6 w-6" />
           </Button>
         </div>
       </div>
+
+      {/* Split Card Modal */}
     </div>
   );
 }

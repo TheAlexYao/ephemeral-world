@@ -49,49 +49,53 @@ export default function NewGroupPage() {
   };
 
   return (
-    <div className="p-4 space-y-4 h-[calc(100dvh-4rem)] overflow-y-auto">
-      <h1 className="text-xl font-bold">Create New Group</h1>
-      
-      <div className="space-y-4">
-        <Input
-          placeholder="Group Name"
-          value={groupName}
-          onChange={(e) => setGroupName(e.target.value)}
-        />
-        
-        <Button 
-          className="w-full" 
-          onClick={handleCreateGroup}
-          disabled={!groupName || !!shareLink}
-        >
-          Create Group
-        </Button>
-      </div>
-
-      {shareLink && (
-        <Card className="p-4 space-y-4">
-          <div className="text-center">
-            <h3 className="font-semibold">Share Link Generated!</h3>
-            <p className="text-sm text-gray-500 mt-1">
-              Share this link with your friends to join the group
-            </p>
-          </div>
-
-          <div className="flex gap-2">
-            <Input value={shareLink} readOnly />
-            <Button variant="outline" onClick={handleCopyLink}>
-              <Share2 className="w-4 h-4" />
+    <div className="h-[calc(100dvh-var(--miniapp-top-height))] w-full flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto pb-[var(--bottom-nav-height)]">
+        <div className="container mx-auto py-8 px-4">
+          <h1 className="text-xl font-bold">Create New Group</h1>
+          
+          <div className="space-y-4">
+            <Input
+              placeholder="Group Name"
+              value={groupName}
+              onChange={(e) => setGroupName(e.target.value)}
+            />
+            
+            <Button 
+              className="w-full" 
+              onClick={handleCreateGroup}
+              disabled={!groupName || !!shareLink}
+            >
+              Create Group
             </Button>
           </div>
 
-          <Button 
-            className="w-full"
-            onClick={handleStartChat}
-          >
-            Start Chatting
-          </Button>
-        </Card>
-      )}
+          {shareLink && (
+            <Card className="p-4 space-y-4">
+              <div className="text-center">
+                <h3 className="font-semibold">Share Link Generated!</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Share this link with your friends to join the group
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <Input value={shareLink} readOnly />
+                <Button variant="outline" onClick={handleCopyLink}>
+                  <Share2 className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <Button 
+                className="w-full"
+                onClick={handleStartChat}
+              >
+                Start Chatting
+              </Button>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
