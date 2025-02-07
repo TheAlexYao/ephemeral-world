@@ -102,7 +102,8 @@ export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
                   amount={msg.data.total}
                   currency={msg.data.currency}
                   usdRate={msg.data.usdRate}
-                  participants={participants}
+                  paidBy={user!} // The user who sent the split request
+                  participants={participants.filter(p => p.id !== user!.id)} // Everyone except the payer
                   onComplete={() => {
                     addMessage({
                       type: 'travel-fund',

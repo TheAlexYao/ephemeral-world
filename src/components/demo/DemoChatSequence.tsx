@@ -92,7 +92,8 @@ export function DemoChatSequence() {
                   amount={MOCK_RECEIPT.total}
                   currency={MOCK_RECEIPT.currency}
                   usdRate={MOCK_RECEIPT.usdRate}
-                  participants={MOCK_PARTICIPANTS}
+                  paidBy={MOCK_PARTICIPANTS[0]} // First participant is the payer
+                  participants={MOCK_PARTICIPANTS.slice(1)} // Rest need to pay back
                   onComplete={() => {
                     setTimeout(() => setShowTravelFund(true), ANIMATION_DELAYS.TRAVEL_FUND_SHOW);
                   }}

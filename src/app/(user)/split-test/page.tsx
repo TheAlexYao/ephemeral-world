@@ -32,7 +32,8 @@ export default function SplitTest() {
         amount={30} // $30 total
         currency="USD"
         usdRate={1} // 1:1 for USD
-        participants={testParticipants}
+        paidBy={testParticipants[0]} // Alice paid
+        participants={testParticipants.slice(1)} // Bob and Charlie need to pay back
         isTestMode={true}
         onComplete={() => alert('Payment completed!')}
       />
