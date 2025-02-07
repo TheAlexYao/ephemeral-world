@@ -89,7 +89,7 @@ export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
         body: JSON.stringify({
           roomId,
           userId: currentUser.id,
-          content: content,
+          message: content,
           type,
           data
         })
@@ -122,8 +122,9 @@ export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
   return (
     <div className="h-[calc(100dvh-var(--miniapp-top-height))] w-full flex flex-col overflow-hidden">
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto pb-4">
-        <div className="space-y-4 p-4">
+      <div className="flex-1 overflow-y-auto">
+        <div className="space-y-4 p-4 pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))]">
+
           {messages.map((msg) => {
             const isCurrentUser = msg.userId === currentUser.id;
             const user = participants.find(p => p.id === msg.userId);
@@ -177,7 +178,7 @@ export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
       </div>
 
       {/* Input Area - Fixed at bottom */}
-      <div className="border-t bg-background p-4 pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))]">
+      <div className="border-t bg-background p-4">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
