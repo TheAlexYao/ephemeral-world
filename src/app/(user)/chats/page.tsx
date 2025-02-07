@@ -6,11 +6,14 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ChatRoom } from '@/components/chat/ChatRoom';
-import { MOCK_PARTICIPANTS } from '@/components/demo/mockData';
+import { db } from '@/lib/db';
+import { eq } from 'drizzle-orm';
 
 interface ChatGroup {
-  id: string;
-  name: string;
+  roomId: string;
+  createdBy: string;
+  createdAt: string;
+  deepLink: string;
   participants: {
     id: string;
     name: string;
@@ -24,35 +27,80 @@ export default function ChatsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeGroup, setActiveGroup] = useState<ChatGroup | null>(null);
+  const [activeChats, setActiveChats] = useState<ChatGroup[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Handle room ID from URL
+  // Fetch active chat room from Turso
   useEffect(() => {
     const roomId = searchParams.get('room');
     if (roomId && !activeGroup) {
-      // For demo, create a group with mock data
-      setActiveGroup({
-        id: roomId,
-        name: 'Demo Group',
-        participants: MOCK_PARTICIPANTS
-      });
+      const fetchRoom = async () => {
+        try {
+          // Fetch room and participants
+          const response = await fetch(`/api/rooms/${roomId}`);
+          if (!response.ok) throw new Error('Room not found');
+          
+          const roomData = await response.json();
+          setActiveGroup({
+            ...roomData,
+            participants: roomData.participants.map((p: any) => ({
+              id: p.id,
+              name: p.name,
+              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
+              verified: p.verified
+            }))
+          });
+        } catch (error) {
+          console.error('Failed to fetch room:', error);
+          router.push('/chats');
+        }
+      };
+      
+      fetchRoom();
     }
-  }, [searchParams, activeGroup]);
+  }, [searchParams, activeGroup, router]);
 
   // Mock current user for demo
+  // Create user object from World ID session
   const currentUser = {
-    id: '1',
-    name: session?.user?.name || 'You',
-    avatar: session?.user?.image || 'https://api.dicebear.com/7.x/avataaars/svg?seed=You',
-    verified: true,
+    id: session?.user?.id || 'anonymous',
+    name: session?.user?.name || 'Anonymous',
+    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${session?.user?.id || 'anonymous'}`,
+    verified: session?.user?.verified || false,
   };
+
+  // Fetch all active chats for the user
+  useEffect(() => {
+    const fetchChats = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/rooms');
+        if (!response.ok) throw new Error('Failed to fetch chats');
+        const chats = await response.json();
+        setActiveChats(chats);
+      } catch (error) {
+        console.error('Failed to fetch chats:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (session?.user?.id) {
+      fetchChats();
+    }
+  }, [session?.user?.id]);
 
   return (
     <div className="h-[calc(100vh-4rem)]">
-      {activeGroup ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+        </div>
+      ) : activeGroup ? (
         // Active Chat Room
         <div className="h-full flex flex-col">
           <div className="flex items-center justify-between p-4 border-b">
-            <h1 className="text-lg font-semibold">{activeGroup.name}</h1>
+            <h1 className="text-lg font-semibold">{`Group Chat (${activeGroup.participants.length} participants)`}</h1>
             <Button 
               variant="ghost" 
               size="sm"
@@ -63,7 +111,7 @@ export default function ChatsPage() {
           </div>
           <div className="flex-1 overflow-hidden">
             <ChatRoom
-              roomId={activeGroup.id}
+              roomId={activeGroup.roomId}
               currentUser={currentUser}
               participants={activeGroup.participants}
             />
@@ -80,10 +128,49 @@ export default function ChatsPage() {
             </Button>
           </div>
           
-          <div className="text-center text-gray-500 mt-8">
-            <p>No active chats</p>
-            <p className="text-sm mt-2">Create a new group to get started!</p>
-          </div>
+          {activeChats.length > 0 ? (
+            <div className="space-y-3">
+              {activeChats.map((chat) => (
+                <div
+                  key={chat.roomId}
+                  onClick={() => router.push(`/chats?room=${chat.roomId}`)}
+                  className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex -space-x-2">
+                        {chat.participants.slice(0, 3).map((p) => (
+                          <div
+                            key={p.id}
+                            className="w-8 h-8 rounded-full border-2 border-white overflow-hidden"
+                          >
+                            <img
+                              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`}
+                              alt={p.name}
+                              className="w-full h-full"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">
+                          {chat.participants.length} participants
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          Created {new Date(chat.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-gray-500 mt-8">
+              <p>No active chats</p>
+              <p className="text-sm mt-2">Create a new group to get started!</p>
+            </div>
+          )}
         </div>
       )}
     </div>
