@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Share2 } from 'lucide-react';
-import { MOCK_PARTICIPANTS } from '@/components/demo/mockData';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function NewGroupPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const { toast } = useToast();
   const [groupName, setGroupName] = useState('');
   const [shareLink, setShareLink] = useState('');
 
@@ -37,15 +38,42 @@ export default function NewGroupPage() {
 
   const handleCopyLink = async () => {
     await navigator.clipboard.writeText(shareLink);
-    // You could show a toast here
+    toast({
+      title: 'Link copied!',
+      description: 'Share this link with others to join the chat.',
+      duration: 2000
+    });
   };
 
-  const handleStartChat = () => {
+  const handleStartChat = async () => {
     if (!shareLink) return;
-    // Extract roomId from World deep link
-    const pathParam = new URL(shareLink).searchParams.get('path');
-    const roomId = pathParam?.split('/').pop();
-    router.push(`/chats?room=${roomId}`);
+    
+    try {
+      // Extract roomId from World deep link
+      const pathParam = new URL(shareLink).searchParams.get('path');
+      const roomId = pathParam?.split('/').pop();
+      
+      if (!roomId) {
+        throw new Error('Invalid room ID');
+      }
+
+      // Join the room first
+      const joinResponse = await fetch(`/api/rooms/${roomId}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!joinResponse.ok) {
+        const error = await joinResponse.json();
+        throw new Error(error.error || 'Failed to join room');
+      }
+
+      // Only redirect after successfully joining
+      router.push(`/chats?room=${roomId}`);
+    } catch (error) {
+      console.error('Failed to start chat:', error);
+      // You could show an error toast here
+    }
   };
 
   return (

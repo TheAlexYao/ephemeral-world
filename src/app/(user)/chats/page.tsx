@@ -91,9 +91,9 @@ export default function ChatsPage() {
   }, [session?.user?.id]);
 
   return (
-    <div className="h-[calc(100dvh-var(--miniapp-top-height))] w-full flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto pb-[var(--bottom-nav-height)]">
-        <div className="container mx-auto py-8 px-4">
+    <div className="h-[calc(100dvh-var(--miniapp-top-height))] w-full flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="container mx-auto p-4 pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))]">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
