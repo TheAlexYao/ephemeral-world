@@ -56,8 +56,8 @@ export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
   const previewVariants = {
     idle: { scale: 1 },
     aligning: {
-      scale: [1, 1.02, 0.98, 1],
-      transition: { duration: 2, repeat: Infinity }
+      scale: [1, 1.01, 0.99, 1],
+      transition: { duration: 1.5, repeat: Infinity, ease: 'easeInOut' }
     }
   };
 
@@ -156,14 +156,14 @@ export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps) {
               {/* Receipt Image Background */}
               <div className="relative w-full h-full bg-black">
                 <Image
-                  src="/images/sample-receipt.jpg"
+                  src="/images/duckreceipt.JPG"
                   alt="Receipt"
-                  fill
-                  sizes="(max-width: 384px) 100vw, 384px"
+                  width={384}
+                  height={512}
                   priority
                   className={cn(
-                    "object-contain transition-opacity duration-500",
-                    (scanState.status as ScanState['status']) === 'idle' ? 'opacity-0' : 'opacity-100'
+                    "w-full h-full object-contain transition-all duration-500",
+                    (scanState.status as ScanState['status']) === 'idle' ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
                   )}
                 />
               </div>
