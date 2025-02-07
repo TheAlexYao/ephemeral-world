@@ -32,7 +32,11 @@ const MOCK_RECEIPT = {
   date: new Date().toISOString()
 };
 
-export function ReceiptScannerMock() {
+interface ReceiptScannerMockProps {
+  onComplete?: () => void;
+}
+
+export function ReceiptScannerMock({ onComplete }: ReceiptScannerMockProps = {}) {
   const [scanning, setScanning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showReceipt, setShowReceipt] = useState(false);
@@ -150,8 +154,7 @@ export function ReceiptScannerMock() {
               <Button 
                 className="w-full"
                 onClick={() => {
-                  // This will be connected to the split UI
-                  console.log('Starting split...');
+                  onComplete?.();
                 }}
               >
                 Split Bill

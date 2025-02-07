@@ -1,8 +1,7 @@
 "use client";
 
 import { Chat } from "@/components/socket-test";
-import { TravelFundMock } from "@/components/demo/TravelFundMock";
-import { ReceiptScannerMock } from "@/components/demo/ReceiptScannerMock";
+import { DemoChatSequence } from "@/components/demo/DemoChatSequence";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -47,17 +46,8 @@ export default function TestPage() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold mb-4">Demo Components</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="border rounded-lg p-4 bg-white shadow">
-            <h3 className="text-lg font-semibold mb-4">Receipt Scanner</h3>
-            <ReceiptScannerMock />
-          </div>
-          <div className="border rounded-lg p-4 bg-white shadow">
-            <h3 className="text-lg font-semibold mb-4">Travel Fund</h3>
-            <TravelFundMock />
-          </div>
-        </div>
+        <h2 className="text-2xl font-bold mb-4">Demo Flow</h2>
+        <DemoChatSequence />
       </section>
     </main>
   );
