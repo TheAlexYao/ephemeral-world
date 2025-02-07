@@ -62,7 +62,7 @@ export async function GET(
       roomId: roomDetails.roomId,
       name: roomDetails.name,
       createdBy: roomDetails.createdBy,
-      createdAt: roomDetails.createdAt,
+      createdAt: roomDetails.createdAt ?? new Date().toISOString(),
       deepLink: roomDetails.deepLink,
       participants: uniqueParticipants
     };

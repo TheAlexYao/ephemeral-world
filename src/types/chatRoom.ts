@@ -1,5 +1,6 @@
 export interface ChatRoom {
   roomId: string;
+  name: string;
   createdBy: string;
   createdAt: string;
   deepLink: string;
