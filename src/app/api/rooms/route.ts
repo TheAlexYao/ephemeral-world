@@ -4,7 +4,6 @@ import { chatRooms, sessionLogs, users } from '@/drizzle/schema';
 import { eq, and, isNull } from 'drizzle-orm';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { Session } from '@/lib/types';
 
 export async function GET() {
   try {
@@ -42,7 +41,7 @@ export async function GET() {
       }
       
       // Add participant if not already added
-      if (!acc[row.chat_rooms.roomId].participants.find(p => p.id === row.users.id)) {
+      if (!acc[row.chat_rooms.roomId].participants.find((p: { id: string; }) => p.id === row.users.id)) {
         acc[row.chat_rooms.roomId].participants.push({
           id: row.users.id,
           name: row.users.name || '',
