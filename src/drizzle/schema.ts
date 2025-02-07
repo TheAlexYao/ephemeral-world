@@ -18,11 +18,13 @@ export const users = sqliteTable("users", {
 export const chatRooms = sqliteTable("chat_rooms", {
   // roomId used as primary key; expecting a UUID string
   roomId: text("roomId").primaryKey(),
+  // Room name provided by the creator
+  name: text("name").notNull(),
   // References users.id from the existing table; adjust as needed for your FK logic
   createdBy: text("createdBy").notNull(),
   createdAt: text("createdAt").default(sql`CURRENT_TIMESTAMP`),
   deepLink: text("deepLink").notNull(),
-  active: integer("active", { mode: "boolean" }).default(false),
+  active: integer("active", { mode: "boolean" }).default(true),
 });
 
 // New SessionLog table (persistent data in Turso)

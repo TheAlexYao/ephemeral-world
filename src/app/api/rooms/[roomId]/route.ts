@@ -9,52 +9,62 @@ export async function GET(
   { params }: { params: { roomId: string } }
 ) {
   try {
-    // Fetch the chat room with active sessions
-    const room = await db
+    // First fetch the room details
+    const [roomDetails] = await db
       .select({
         roomId: chatRooms.roomId,
+        name: chatRooms.name,
         active: chatRooms.active,
         createdBy: chatRooms.createdBy,
         createdAt: chatRooms.createdAt,
         deepLink: chatRooms.deepLink,
+      })
+      .from(chatRooms)
+      .where(eq(chatRooms.roomId, params.roomId))
+      .execute();
+
+    if (!roomDetails || !roomDetails.active) {
+      return new NextResponse('Room not found', { status: 404 });
+    }
+
+    // Then fetch active participants
+    const participants = await db
+      .select({
         user: {
           id: users.id,
           name: users.name,
           verified: users.orb_verified
         }
       })
-      .from(chatRooms)
-      .where(eq(chatRooms.roomId, params.roomId))
-      .innerJoin(
-        sessionLogs,
+      .from(sessionLogs)
+      .where(
         and(
-          eq(sessionLogs.roomId, chatRooms.roomId),
+          eq(sessionLogs.roomId, params.roomId),
           isNull(sessionLogs.leaveTime)
         )
       )
       .innerJoin(users, eq(users.id, sessionLogs.userId))
       .execute();
 
-    if (!room.length || !room[0].active) {
-      return new NextResponse('Room not found', { status: 404 });
-    }
-
     // Extract unique participants
-    const participants = Array.from(new Set(room.map(r => r.user.id))).map(userId => {
-      const user = room.find(r => r.user.id === userId)?.user;
+    const uniqueParticipants = Array.from(
+      new Set(participants.map(p => p.user.id))
+    ).map(userId => {
+      const participant = participants.find(p => p.user.id === userId)?.user;
       return {
-        id: user?.id || '',
-        name: user?.name || '',
-        verified: user?.verified || false
+        id: participant?.id || '',
+        name: participant?.name || '',
+        verified: participant?.verified || false
       };
     });
 
     const roomData: ChatRoom = {
-      roomId: room[0].roomId ?? '',
-      createdBy: room[0].createdBy ?? '',
-      createdAt: room[0].createdAt ?? new Date().toISOString(),
-      deepLink: room[0].deepLink ?? '',
-      participants
+      roomId: roomDetails.roomId,
+      name: roomDetails.name,
+      createdBy: roomDetails.createdBy,
+      createdAt: roomDetails.createdAt,
+      deepLink: roomDetails.deepLink,
+      participants: uniqueParticipants
     };
 
     return NextResponse.json(roomData);

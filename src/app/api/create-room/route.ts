@@ -85,6 +85,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Get room name from request body
+    const { name } = await req.json();
+    if (!name) {
+      return NextResponse.json(
+        { error: "Room name is required" },
+        { status: 400 }
+      );
+    }
+
     // Generate cryptographically secure room ID
     const roomId = randomUUID();
 
@@ -94,6 +103,7 @@ export async function POST(req: NextRequest) {
     // Persist room data in Turso DB
     await db.insert(chatRooms).values({
       roomId,
+      name,
       createdBy: userId,
       deepLink,
       active: true,
