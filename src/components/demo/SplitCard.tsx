@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Token } from '@worldcoin/mini-apps-ui-kit-react';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Check, Wallet } from 'lucide-react';
+import { MiniKit, tokenToDecimals, Tokens } from '@worldcoin/minikit-js';
 
 
 interface Participant {
@@ -56,35 +56,59 @@ export function SplitCard({ amount, currency, usdRate, paidBy, participants, onC
 
   const handlePayment = async () => {
     try {
-      // Get payment details from backend
-      // In test mode, cap the amount to 0.01 WLD worth
-      const testAmount = isTestMode ? Math.min(perPersonAmount, 0.05) : perPersonAmount;
+      // Always use test amount for demo
+      const testAmount = 0.05; // $0.05 USD worth of WLD
       
-      const response = await fetch('/api/split-payment/prepare', {
+      // Get payment reference
+      const response = await fetch('/api/initiate-payment', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: testAmount,
-          isTestMode,
-          currency: currency,
-          paidBy, // Add who paid
-          participants // Add who needs to pay back
-        })
       });
 
-      if (!response.ok) throw new Error('Failed to prepare payment');
-      
-      const details = await response.json();
-      setPaymentDetails(details);
-      
-      // Simulate payment success after a short delay
-      setTimeout(() => {
+      if (!response.ok) throw new Error('Failed to initiate payment');
+      const { id } = await response.json();
+
+      // Use MiniKit to process payment
+      if (!MiniKit.isInstalled()) {
+        throw new Error('MiniKit not installed');
+      }
+
+      const payload = {
+        reference: id,
+        to: '0x0c892815f0B058E69987920A23FBb33c834289cf', // Test address
+        tokens: [
+          {
+            symbol: Tokens.WLD,
+            token_amount: tokenToDecimals(testAmount, Tokens.WLD).toString(),
+          }
+        ],
+        description: `Split payment for ${paidBy.name}`,
+      };
+
+      const paymentResponse = await MiniKit.commandsAsync.pay(payload);
+      if (!paymentResponse?.finalPayload) {
+        throw new Error('Payment cancelled');
+      }
+
+      // Confirm payment with backend
+      const confirmResponse = await fetch('/api/confirm-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payload: paymentResponse.finalPayload }),
+      });
+
+      if (!confirmResponse.ok) throw new Error('Failed to confirm payment');
+      const { success } = await confirmResponse.json();
+
+      if (success) {
         setCompleted(true);
         onComplete?.();
-      }, 1000);
+      } else {
+        throw new Error('Payment verification failed');
+      }
+
     } catch (error) {
-      console.error('Payment preparation error:', error);
-      // Handle error
+      console.error('Payment error:', error);
+      // Show error in UI if needed
     }
   };
 

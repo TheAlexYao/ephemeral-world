@@ -8,9 +8,9 @@ export function BottomNav() {
   const router = useRouter();
 
   const navigation = [
-    { name: "Home", href: "/home", icon: Home },
+    { name: "Chats", href: "/chats", icon: Home },
+    { name: "New Group", href: "/new", icon: Calendar },
     { name: "Profile", href: "/profile", icon: User },
-    { name: "Test", href: "/test", icon: Search },
   ];
 
   return (

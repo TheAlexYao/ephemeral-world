@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from 'react';
-import { Camera } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Camera, Send } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ReceiptScannerMock } from '../demo/ReceiptScannerMock';
-import { ReceiptMessage } from '../demo/ReceiptMessage';
-import { SplitCard } from '../demo/SplitCard';
-import { TravelFundMessage } from '../demo/TravelFundMock';
-import { MOCK_RECEIPT } from '../demo/mockData';
+import { SplitCard } from '@/components/split/SplitCard';
+import { TravelFundMessage } from '@/components/demo/TravelFundMock';
+import { cn } from '@/lib/utils';
+import { pusherClient } from '@/lib/pusher';
 
 interface User {
   id: string;
@@ -21,10 +20,11 @@ interface User {
 interface ChatMessage {
   id: string;
   userId: string;
-  type: 'text' | 'receipt' | 'split' | 'travel-fund';
-  content?: string;
+  type: 'text' | 'split' | 'travel-fund';
+  content: string;
   data?: any;
-  timestamp: Date;
+  timestamp: string;
+  expiresAt?: string;
 }
 
 interface ChatRoomProps {
@@ -36,28 +36,79 @@ interface ChatRoomProps {
 export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [showScanner, setShowScanner] = useState(false);
+  const [showSplit, setShowSplit] = useState(false);
+  const [showTravelFund, setShowTravelFund] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Load existing messages and setup Pusher
+  useEffect(() => {
+    // Load existing messages
+    fetch(`/api/socket?roomId=${roomId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.messages) {
+          setMessages(data.messages);
+        }
+      });
+
+    // Subscribe to Pusher channel
+    const channel = pusherClient.subscribe(`presence-room-${roomId}`);
+
+    // Handle new messages
+    channel.bind('new-message', (message: ChatMessage) => {
+      setMessages(prev => [...prev, message]);
+    });
+
+    // Handle message expiration
+    channel.bind('message_expired', ({ messageId }: { messageId: string }) => {
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+    });
+
+    return () => {
+      channel.unbind_all();
+      channel.unsubscribe();
+    };
+  }, [roomId]);
 
   const generateMessageId = () => `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
-  const addMessage = (message: Partial<ChatMessage>) => {
-    const newMessage: ChatMessage = {
-      id: generateMessageId(),
-      userId: currentUser.id,
-      timestamp: new Date(),
-      type: 'text',
-      ...message,
-    };
-    setMessages(prev => [...prev, newMessage]);
+  const sendMessage = async (content: string, type: 'text' | 'split' | 'travel-fund' = 'text', data?: any) => {
+    try {
+      const response = await fetch('/api/socket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomId,
+          userId: currentUser.id,
+          content: content,
+          type,
+          data
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error);
+      }
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      // You could show an error toast here
+    }
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
     
-    addMessage({
-      content: inputMessage.trim(),
-      type: 'text',
-    });
+    await sendMessage(inputMessage.trim());
     setInputMessage('');
   };
 
@@ -93,24 +144,21 @@ export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
           const user = participants.find(p => p.id === msg.userId);
 
           switch (msg.type) {
-            case 'receipt':
-              return <ReceiptMessage key={msg.id} receipt={msg.data} />;
             case 'split':
               return (
-                <SplitCard
-                  key={msg.id}
-                  amount={msg.data.total}
-                  currency={msg.data.currency}
-                  usdRate={msg.data.usdRate}
-                  paidBy={user!} // The user who sent the split request
-                  participants={participants.filter(p => p.id !== user!.id)} // Everyone except the payer
-                  onComplete={() => {
-                    addMessage({
-                      type: 'travel-fund',
-                      userId: 'system'
-                    });
-                  }}
-                />
+                <div key={msg.id} className="w-full max-w-md mx-auto">
+                  <SplitCard
+                    paidBy={currentUser}
+                    participants={participants.filter(p => p.id !== currentUser.id)}
+                    onComplete={async () => {
+                      // Show travel fund after payment completes
+                      setTimeout(async () => {
+                        await sendMessage('Travel Fund', 'travel-fund');
+                        setShowTravelFund(true);
+                      }, 1000);
+                    }}
+                  />
+                </div>
               );
             case 'travel-fund':
               return <TravelFundMessage key={msg.id} />;
@@ -118,16 +166,20 @@ export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
               return (
                 <div
                   key={msg.id}
-                  className={`flex items-start gap-2 ${isCurrentUser ? 'flex-row-reverse' : ''}`}
+                  className={cn(
+                    'flex items-start gap-2',
+                    isCurrentUser ? 'flex-row-reverse' : ''
+                  )}
                 >
                   <Avatar className="w-8 h-8">
                     <AvatarImage src={user?.avatar} />
                     <AvatarFallback>{user?.name[0] ?? 'U'}</AvatarFallback>
                   </Avatar>
                   <div 
-                    className={`rounded-lg p-3 max-w-[80%] ${
+                    className={cn(
+                      'rounded-lg p-3 max-w-[80%]',
                       isCurrentUser ? 'bg-blue-500 text-white' : 'bg-gray-100'
-                    }`}
+                    )}
                   >
                     {msg.content}
                   </div>
@@ -135,50 +187,42 @@ export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
               );
           }
         })}
-
-        {showScanner && (
-          <div className="relative">
-            <ReceiptScannerMock
-              onComplete={() => {
-                setShowScanner(false);
-                // Add receipt message
-                addMessage({
-                  type: 'receipt',
-                  data: MOCK_RECEIPT
-                });
-                // Add split card after a delay
-                setTimeout(() => {
-                  addMessage({
-                    type: 'split',
-                    userId: 'system',
-                    data: MOCK_RECEIPT
-                  });
-                }, 1000);
-              }}
-            />
-          </div>
-        )}
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Chat Input */}
+      {/* Input */}
       <div className="p-4 border-t">
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2">
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
-            onClick={() => setShowScanner(true)}
-            disabled={showScanner}
+            onClick={async () => {
+              // Start split payment flow
+              await sendMessage('Split Payment', 'split');
+              setShowSplit(true);
+            }}
           >
-            <Camera className="w-5 h-5" />
+            <Camera className="w-4 h-4" />
           </Button>
           <Input
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="Type a message..."
+            placeholder="Type a message"
             className="flex-1"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
           />
-          <Button onClick={handleSendMessage}>Send</Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleSendMessage}
+          >
+            <Send className="w-4 h-4" />
+          </Button>
         </div>
       </div>
     </div>
