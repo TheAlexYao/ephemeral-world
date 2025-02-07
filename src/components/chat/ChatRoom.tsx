@@ -18,12 +18,12 @@ interface User {
 }
 
 interface ChatMessage {
-  id: string;
+  messageId?: string;
   userId: string;
-  type: 'text' | 'split' | 'travel-fund';
-  content: string;
-  data?: any;
+  message: string;
   timestamp: string;
+  type?: 'text' | 'split' | 'travel-fund';
+  data?: any;
   expiresAt?: string;
 }
 
@@ -70,7 +70,7 @@ export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
 
     // Handle message expiration
     channel.bind('message_expired', ({ messageId }: { messageId: string }) => {
-      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+      setMessages(prev => prev.filter(msg => msg.messageId !== messageId));
     });
 
     return () => {
@@ -120,7 +120,7 @@ export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
   };
 
   return (
-    <div className="h-[calc(100dvh-var(--miniapp-top-height))] w-full flex flex-col overflow-hidden">
+    <div className="h-[calc(100dvh-var(--miniapp-top-height)-var(--bottom-nav-height)-env(safe-area-inset-bottom))] w-full flex flex-col overflow-hidden">
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-4 p-4 pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))]">
@@ -132,7 +132,7 @@ export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
             switch (msg.type) {
               case 'split':
                 return (
-                  <div key={msg.id} className="w-full max-w-md mx-auto">
+                  <div key={msg.messageId} className="w-full max-w-md mx-auto">
                     <SplitCard
                       paidBy={currentUser}
                       participants={participants.filter(p => p.id !== currentUser.id)}
@@ -147,19 +147,19 @@ export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
                   </div>
                 );
               case 'travel-fund':
-                return <TravelFundMessage key={msg.id} />;
+                return <TravelFundMessage key={msg.messageId} />;
               default:
                 return (
                   <div
-                    key={msg.id}
+                    key={msg.messageId}
                     className={cn(
                       'flex items-start gap-2',
                       isCurrentUser ? 'flex-row-reverse' : ''
                     )}
                   >
                     <Avatar className="w-8 h-8">
-                      <AvatarImage src={user?.avatar} />
-                      <AvatarFallback>{user?.name[0] ?? 'U'}</AvatarFallback>
+                      <AvatarImage src={isCurrentUser ? currentUser.avatar : user?.avatar} />
+                      <AvatarFallback>{isCurrentUser ? currentUser.name[0] : (user?.name[0] ?? 'U')}</AvatarFallback>
                     </Avatar>
                     <div 
                       className={cn(
@@ -167,7 +167,7 @@ export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
                         isCurrentUser ? 'bg-blue-500 text-white' : 'bg-gray-100'
                       )}
                     >
-                      {msg.content}
+                      {msg.message}
                     </div>
                   </div>
                 );
@@ -184,7 +184,10 @@ export function ChatRoom({ roomId, currentUser, participants }: ChatRoomProps) {
             variant="ghost"
             size="icon"
             className="shrink-0"
-            onClick={() => setShowSplit(true)}
+            onClick={async () => {
+              await sendMessage('Split bill', 'split');
+              setShowSplit(true);
+            }}
           >
             <Camera className="h-6 w-6" />
           </Button>

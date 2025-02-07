@@ -101,8 +101,11 @@ export default function ChatsPage() {
           ) : activeGroup ? (
             // Active Chat Room
             <div className="h-full flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b">
-                <h1 className="text-lg font-semibold">{`Group Chat (${activeGroup.participants.length} participants)`}</h1>
+              <div className="sticky top-0 z-10 bg-background flex items-center justify-between p-4 border-b">
+                <div>
+                  <h1 className="text-lg font-semibold">Group Chat</h1>
+                  <p className="text-sm text-muted-foreground">{activeGroup.participants.length} participant{activeGroup.participants.length !== 1 ? 's' : ''}</p>
+                </div>
                 <Button 
                   variant="ghost" 
                   size="sm"

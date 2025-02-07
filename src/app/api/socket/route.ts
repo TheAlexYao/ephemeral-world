@@ -23,10 +23,13 @@ export const runtime = 'nodejs';
  * Message interface defining the structure of chat messages
  */
 interface Message {
+  messageId?: string;  // Optional unique identifier for the message
   userId: string;      // Unique identifier of the message sender
   message: string;     // Content of the message
   timestamp: string;   // ISO timestamp of when the message was sent
-  messageId?: string;  // Optional unique identifier for the message
+  type?: 'text' | 'split' | 'travel-fund';  // Type of message for special handling
+  data?: any;         // Additional data for special message types
+  expiresAt?: string; // Optional expiration time for ephemeral messages
 }
 
 /**
